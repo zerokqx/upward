@@ -1,0 +1,44 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+project:
+  title: 'Identity Service'
+  description: 'Authentication and user management service in OCaml'
+  type: 'application'
+
+language: 'other'
+
+tasks:
+  build:
+    command: 'dune build'
+    inputs:
+      - 'bin/**/*'
+      - 'lib/**/*'
+      - 'dune-project'
+      - '**/dune'
+    outputs:
+      - '_build'
+
+  dev:
+    command: 'dune exec bin/main.exe -w'
+    options:
+      persistent: true
+      runInCI: false
+
+  run:
+    command: 'dune exec bin/main.exe'
+    options:
+      runInCI: false
+
+  test:
+    command: 'dune runtest'
+    inputs:
+      - 'bin/**/*'
+      - 'lib/**/*'
+      - 'test/**/*'
+      - 'dune-project'
+      - '**/dune'
+
+  clean:
+    command: 'dune clean'
+    options:
+      runInCI: false

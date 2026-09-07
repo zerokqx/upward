@@ -1,0 +1,32 @@
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# moon
+.moon/cache
+.moon/docker
+
+# moon
+.moon/cache
+.moon/docker
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Builds
+dist
+_build
+target
+
+# OS / IDE
+.DS_Store
+*.swp
+*.swo
