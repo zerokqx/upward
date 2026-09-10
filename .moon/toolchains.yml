@@ -1,5 +1,6 @@
 $schema: 'https://moonrepo.dev/schemas/toolchains.json'
 
+rust: {}
 javascript:
   packageManager: 'pnpm'
   inferTasksFromScripts: true

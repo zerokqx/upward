@@ -7,20 +7,19 @@
 }:
 
 {
-  # https://devenv.sh/basics/
-  env.GREET = "devenv";
 
   # https://devenv.sh/packages/
   packages = [
     pkgs.git
     pkgs.moon
     pkgs.opam
+    pkgs.gmp
     pkgs.dune
+    pkgs.pkg-config
   ];
 
   # https://devenv.sh/languages/
   languages = {
-
     ocaml = {
       enable = true;
     };
@@ -30,19 +29,6 @@
       pnpm.enable = true;
     };
   };
-
-  # https://devenv.sh/processes/
-  # processes.dev.exec = "${lib.getExe pkgs.watchexec} -n -- ls -la";
-
-  # https://devenv.sh/services/
-  # services.postgres.enable = true;
-
-  # https://devenv.sh/scripts/
-  scripts.hello.exec = ''
-    echo hello from $GREET
-  '';
-
-  # https://devenv.sh/basics/
   enterShell = ''
     RED='\033[0;31m'
     GREEN='\033[0;32m'
@@ -56,6 +42,8 @@
     echo -e "''${GREEN}git''${NC}   $(git --version)"
     echo -e "''${YELLOW}cargo''${NC} $(cargo --version)"
     echo -e "''${BLUE}node''${NC}  $(node --version)"
+
+    echo -e "''${YELLOW}opam''${NC}  $(opam --version)"
   '';
 
   # https://devenv.sh/tasks/

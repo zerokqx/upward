@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    # Используем официальный образ с поддержкой PostgreSQL 17
+    image: timescale/timescaledb:latest-pg17
+    container_name: uptime-timescale
+    restart: always
+    environment:
+      POSTGRES_USER: myuser          # Имя пользователя
+      POSTGRES_PASSWORD: mypassword  # Пароль
+      POSTGRES_DB: uptimedb          # Название базы данных
+    ports:
+      - "5432:5432"                  # Проброс портов (стандартный для Postgres)
+    volumes:
+      - tsdata:/var/lib/postgresql/data # Сохранение данных на диске хоста
+
+volumes:
+  tsdata: # Именованный том для таймскейла

@@ -1,0 +1,7 @@
+# .moon/tasks/docker.yml
+inheritedBy:
+  files:
+    - "compose.infra.yml"
+tasks:
+  compose-infra-up:
+    command: "docker compose -f $projectRoot/compose.infra.yml up -d"
