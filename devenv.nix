@@ -16,10 +16,13 @@
     pkgs.gmp
     pkgs.dune
     pkgs.pkg-config
+    pkgs.haskell-language-server 
   ];
 
   # https://devenv.sh/languages/
   languages = {
+    haskell.enable = true;
+    rust.clangLinker.enable = true;
     ocaml = {
       enable = true;
     };

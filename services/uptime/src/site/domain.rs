@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize, ser};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+
 pub struct UserId(pub String);
 
 #[derive(thiserror::Error, Debug)]
@@ -21,7 +22,6 @@ struct RawPingResponse {
 #[derive(Debug)]
 pub struct PingResponse {
     pub ping_duratation: Duration,
-
     pub extra: HashMap<String, serde_json::Value>,
 }
 

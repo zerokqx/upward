@@ -12,3 +12,4 @@ thiserror = "2.0.20"
 sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid" ] }
 chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1.53.1", features = ["full"] }
+dotenvy = "0.15.7"

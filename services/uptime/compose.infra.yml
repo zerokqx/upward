@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   timescaledb:
     # Используем официальный образ с поддержкой PostgreSQL 17
