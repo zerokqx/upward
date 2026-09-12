@@ -1,0 +1,4 @@
+ALTER TABLE sites
+ADD COLUMN IF NOT EXISTS last_check TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_sites_last_check ON sites (last_check ASC NULLS FIRST);

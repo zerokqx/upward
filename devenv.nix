@@ -16,7 +16,7 @@
     pkgs.gmp
     pkgs.dune
     pkgs.pkg-config
-    pkgs.haskell-language-server 
+    pkgs.sqlx-cli
   ];
 
   # https://devenv.sh/languages/

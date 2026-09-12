@@ -6,12 +6,16 @@ env:
 
 fileGroups:
   sources:
+    - 'src/**/*'
     - 'crates/*/src/**/*'
     - 'crates/*/Cargo.toml'
     - 'Cargo.toml'
   tests:
+    - 'tests/**/*'
     - 'crates/*/benches/**/*'
     - 'crates/*/tests/**/*'
+  migrations:
+    - 'migrations/**/*'
 
 tasks:
   run: 
@@ -41,3 +45,10 @@ tasks:
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
+  migrate:
+    command: 'sqlx migrate run'
+    inputs:
+      - '@globs(migrations)'
+      - '.env'
+    options:
+      cache: false
