@@ -1,9 +1,11 @@
+mod blocked_ip;
 mod site;
 use std::env;
 use std::time::Duration;
 
 use axum::Json;
 use axum::extract::State;
+use axum::routing::post;
 use axum::{Router, http::StatusCode, routing::get};
 use dotenvy::dotenv;
 use reqwest::redirect;
@@ -15,9 +17,18 @@ use tokio::time::interval;
 
 use futures::stream::{self, StreamExt};
 
+use self::blocked_ip::ForbiddenIpRepository;
+use self::site::controller::create_site;
 use self::site::domain::PingResult;
 use self::site::infrastructure::SitePinger;
 use self::site::repository::SiteRepository;
+
+#[derive(Clone)]
+struct AppState {
+    pool: PgPool,
+    site_repo: SiteRepository,
+    forbidden_ip_repo: ForbiddenIpRepository,
+}
 
 async fn check_all_sites(pool: &PgPool) -> JoinHandle<()> {
     let pool = pool.clone();
@@ -98,7 +109,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/sites", get(get_all_sites))
-        .with_state(pool.clone());
+        .route("/sites", post(create_site))
+        .with_state(AppState {
+            pool: pool.clone(),
+            forbidden_ip_repo: blocked_ip::ForbiddenIpRepository::new(pool.clone()),
+            site_repo: SiteRepository::new(pool.clone()),
+        });
     let listner = tokio::net::TcpListener::bind(format!("{}:{}", host, port)).await?;
     check_all_sites(&pool).await;
     axum::serve(listner, app).await?;
@@ -118,7 +134,7 @@ struct SiteRow {
 }
 
 async fn get_all_sites(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<SiteRow>>, (StatusCode, String)> {
     let sites = sqlx::query_as!(
         SiteRow,
@@ -143,7 +159,7 @@ async fn get_all_sites(
         ORDER BY s.id
         "#
     )
-    .fetch_all(&pool)
+    .fetch_all(&state.pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 

@@ -2,6 +2,7 @@ use sqlx::PgPool;
 
 use super::domain::{PingResponse, Site, UserId};
 
+#[derive(Clone)]
 pub struct SiteRepository {
     pool: PgPool,
 }
@@ -11,19 +12,29 @@ impl SiteRepository {
         Self { pool }
     }
     pub async fn save_site(&self, site: &Site) -> Result<i64, sqlx::Error> {
-        let record = sqlx::query!(
+        let res = sqlx::query!(
             r#"
-            INSERT INTO sites (user_id, url)
-            VALUES ($1, $2)
-            RETURNING id
-            "#,
+        INSERT INTO sites (user_id, url)
+        VALUES ($1, $2)
+        RETURNING id
+        "#,
             site.user_id.0,
             site.url
         )
         .fetch_one(&self.pool)
-        .await?;
+        .await;
 
-        Ok(record.id)
+        match res {
+            Ok(record) => Ok(record.id),
+            Err(err) => {
+                if let Some(db_err) = err.as_database_error() {
+                    if db_err.code() == Some("23505".into()) {
+                        println!("Попытка дублирования сайта: {}", site.url);
+                    }
+                }
+                Err(err)
+            }
+        }
     }
     pub async fn get_sites_for_ping(&self, limit: i64) -> Result<Vec<Site>, sqlx::Error> {
         let records = sqlx::query!(
@@ -86,15 +97,14 @@ impl SiteRepository {
         let mut tx = self.pool.begin().await?;
 
         // 1. Пакетная вставка всех пингов за 1 запрос
-        let mut query_builder = sqlx::QueryBuilder::new(
-            "INSERT INTO site_pings (time, site_id, duration_ms, extra) "
-        );
+        let mut query_builder =
+            sqlx::QueryBuilder::new("INSERT INTO site_pings (time, site_id, duration_ms, extra) ");
 
         query_builder.push_values(results, |mut b, item| {
             b.push("NOW()")
-             .push_bind(item.site_id)
-             .push_bind(item.duration_ms)
-             .push_bind(&item.extra);
+                .push_bind(item.site_id)
+                .push_bind(item.duration_ms)
+                .push_bind(&item.extra);
         });
 
         query_builder.build().execute(&mut *tx).await?;

@@ -52,3 +52,18 @@ tasks:
       - '.env'
     options:
       cache: false
+  migrate-run:
+    command: 'sqlx migrate run'
+    inputs:
+      - '@globs(migrations)'
+      - '.env'
+    options:
+      cache: false
+  migrate-status:
+    command: 'sqlx migrate info'
+    inputs:
+      - '@globs(migrations)'
+      - '.env'
+    options:
+      cache: false
+

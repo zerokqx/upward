@@ -1,6 +1,6 @@
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::time::Instant;
-use serde::Deserialize;
 
 use super::domain::{PingResponse, Site, SiteError};
 
