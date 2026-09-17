@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::time::Instant;
 
-use super::domain::{PingResponse, Site, SiteError};
+use super::domain::{PingError, PingExecution};
 
 #[derive(Deserialize)]
 struct RawPingResponse {
@@ -11,24 +11,24 @@ struct RawPingResponse {
 }
 
 #[derive(Clone)]
-pub struct SitePinger {
+pub struct HttpPinger {
     client: reqwest::Client,
 }
 
-impl SitePinger {
+impl HttpPinger {
     pub fn new(client: &reqwest::Client) -> Self {
         Self {
             client: client.clone(),
         }
     }
 
-    pub async fn ping(&self, site: &Site) -> Result<PingResponse, SiteError> {
+    pub async fn ping(&self, url: &str) -> Result<PingExecution, PingError> {
         let start = Instant::now();
-        let result = self.client.get(&site.url).send().await?.text().await?;
+        let result = self.client.get(url).send().await?.text().await?;
         let ping_duration = start.elapsed();
         let parsed_result = serde_json::from_str::<RawPingResponse>(&result)?;
 
-        Ok(PingResponse {
+        Ok(PingExecution {
             ping_duration,
             extra: parsed_result.extra,
         })

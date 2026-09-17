@@ -6,30 +6,24 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use reqwest::Url;
-use serde::Deserialize;
 use tokio::net::lookup_host;
 
-use super::domain::{Site, UserId};
+use super::domain::Site;
+use super::dto::{CreateSiteDto, CreateSiteResponseDto, SiteResponseDto};
 
-#[derive(Deserialize)]
-pub struct CreateSiteDto {
-    pub user_id: UserId,
-    pub site: String,
-}
-
-pub struct IpValidation {
+pub struct IpValidator {
     pub ip: IpAddr,
     forbidden_ip_repo: ForbiddenIpRepository,
 }
 
 #[derive(Debug)]
-pub enum IsForbiddenIpError {
+pub enum IpValidationError {
     IpBlocked,
     IpInvalid,
     DatabaseError(String),
 }
 
-impl IpValidation {
+impl IpValidator {
     pub fn new(ip: IpAddr, forbidden_ip_repo: ForbiddenIpRepository) -> Self {
         Self {
             ip,
@@ -37,23 +31,23 @@ impl IpValidation {
         }
     }
 
-    pub async fn is_forbidden_ip(&self) -> Result<(), IsForbiddenIpError> {
+    pub async fn validate(&self) -> Result<(), IpValidationError> {
         let is_private = match self.ip {
             IpAddr::V4(ip) => self.is_forbidden_ipv4(ip),
             IpAddr::V6(ip) => self.is_forbidden_ipv6(ip),
         };
         if is_private {
-            return Err(IsForbiddenIpError::IpInvalid);
+            return Err(IpValidationError::IpInvalid);
         }
 
         let is_blocked = self
             .forbidden_ip_repo
             .is_blocked(self.ip)
             .await
-            .map_err(|err| IsForbiddenIpError::DatabaseError(err.to_string()))?;
+            .map_err(|err| IpValidationError::DatabaseError(err.to_string()))?;
 
         if is_blocked {
-            return Err(IsForbiddenIpError::IpBlocked);
+            return Err(IpValidationError::IpBlocked);
         }
 
         Ok(())
@@ -84,14 +78,14 @@ impl IpValidation {
     }
 }
 
-fn map_ip_forbidden_error_to_response(err: IsForbiddenIpError) -> (StatusCode, String) {
+fn map_ip_forbidden_error_to_response(err: IpValidationError) -> (StatusCode, String) {
     match err {
-        IsForbiddenIpError::IpBlocked => (StatusCode::FORBIDDEN, "IP is in forbidden list".into()),
-        IsForbiddenIpError::IpInvalid => (
+        IpValidationError::IpBlocked => (StatusCode::FORBIDDEN, "IP is in forbidden list".into()),
+        IpValidationError::IpInvalid => (
             StatusCode::FORBIDDEN,
             "Private, loopback or local IPs are not allowed".into(),
         ),
-        IsForbiddenIpError::DatabaseError(e) => (
+        IpValidationError::DatabaseError(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Database error during IP check: {e}"),
         ),
@@ -105,9 +99,9 @@ async fn validate_host(
 ) -> Result<(), (StatusCode, String)> {
     // 1. Если хост уже является IP-адресом
     if let Ok(ip) = host.parse::<IpAddr>() {
-        let validator = IpValidation::new(ip, repo);
+        let validator = IpValidator::new(ip, repo);
         return validator
-            .is_forbidden_ip()
+            .validate()
             .await
             .map_err(map_ip_forbidden_error_to_response);
     }
@@ -119,9 +113,9 @@ async fn validate_host(
 
     for socket_addr in addrs {
         let ip = socket_addr.ip();
-        let validator = IpValidation::new(ip, repo.clone());
+        let validator = IpValidator::new(ip, repo.clone());
         validator
-            .is_forbidden_ip()
+            .validate()
             .await
             .map_err(map_ip_forbidden_error_to_response)?;
     }
@@ -129,11 +123,56 @@ async fn validate_host(
     Ok(())
 }
 
+/// Добавить новый сайт в мониторинг
+///
+/// Регистрирует URL сайта для периодической проверки доступности.
+/// Выполняет DNS-резолвинг и проверяет, что целевой IP-адрес не является приватным,
+/// локальным (loopback) или заблокированным в таблице `forbidden_ip`.
+#[tracing::instrument(skip(state))]
+#[utoipa::path(
+    post,
+    path = "/sites",
+    tag = "Sites",
+    request_body(
+        content = CreateSiteDto,
+        description = "Данные для регистрации сайта в системе мониторинга",
+        example = json!({
+            "user_id": "usr_01J8ABCDEF1234567890",
+            "site": "https://example.com"
+        })
+    ),
+    responses(
+        (
+            status = 201,
+            description = "Сайт успешно добавлен в систему мониторинга",
+            body = CreateSiteResponseDto,
+            example = json!({ "id": 1, "status": "created" })
+        ),
+        (
+            status = 400,
+            description = "Некорректный запрос: невалидный URL, неподдерживаемая схема или ошибка DNS-резолвинга",
+            body = String,
+            example = json!("Only http and https schemes are allowed")
+        ),
+        (
+            status = 403,
+            description = "Запрещено: целевой IP является приватным, локальным или заблокирован",
+            body = String,
+            example = json!("Private, loopback or local IPs are not allowed")
+        ),
+        (
+            status = 500,
+            description = "Внутренняя ошибка сервера или базы данных",
+            body = String,
+            example = json!("Failed to save site: database error")
+        )
+    )
+)]
 pub async fn create_site(
     State(state): State<AppState>,
     Json(body): Json<CreateSiteDto>,
-) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
-    let url = Url::parse(&body.site)
+) -> Result<(StatusCode, Json<CreateSiteResponseDto>), (StatusCode, String)> {
+    let url = Url::parse(body.site.as_ref())
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid URL: {e}")))?;
 
     if url.scheme() != "https" && url.scheme() != "http" {
@@ -151,14 +190,67 @@ pub async fn create_site(
     validate_host(host, port, state.forbidden_ip_repo).await?;
 
     let site = Site::new(body.site, body.user_id);
-    let site_id = state
-        .site_repo
-        .save_site(&site)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save site: {e}")))?;
+    let site_id = state.site_repo.save_site(&site).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to save site: {e}"),
+        )
+    })?;
 
     Ok((
         StatusCode::CREATED,
-        Json(serde_json::json!({ "id": site_id, "status": "created" })),
+        Json(CreateSiteResponseDto {
+            id: site_id,
+            status: "created",
+        }),
     ))
+}
+
+/// Получить список всех отслеживаемых сайтов
+///
+/// Возвращает список всех зарегистрированных сайтов вместе со статусом и доп. данными последней проверки доступности.
+#[tracing::instrument(skip(state))]
+#[utoipa::path(
+    get,
+    path = "/sites",
+    tag = "Sites",
+    responses(
+        (
+            status = 200,
+            description = "Список отслеживаемых сайтов с последним статусом проверки",
+            body = Vec<SiteResponseDto>,
+            example = json!([
+                {
+                    "id": 1,
+                    "user_id": "usr_01J8ABCDEF1234567890",
+                    "url": "https://example.com",
+                    "created_at": "2026-09-15T12:00:00Z",
+                    "last_check": "2026-09-15T12:05:00Z",
+                    "status": "idle",
+                    "status_updated_at": "2026-09-15T12:05:00Z",
+                    "extra": {
+                        "status_code": 200,
+                        "duration_ms": 142.5
+                    }
+                }
+            ])
+        ),
+        (
+            status = 500,
+            description = "Внутренняя ошибка сервера при чтении из базы данных",
+            body = String,
+            example = json!("Database query error")
+        )
+    )
+)]
+pub async fn get_all_sites(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<SiteResponseDto>>, (StatusCode, String)> {
+    let sites = state
+        .site_repo
+        .get_all_sites()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(sites))
 }

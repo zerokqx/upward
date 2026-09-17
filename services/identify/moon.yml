@@ -1,0 +1,19 @@
+language: 'haskell'
+layer: 'application'
+
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'app/**/*'
+    - 'identify.cabal'
+
+tasks:
+  build:
+    command: 'cabal build all'
+    inputs:
+      - '@globs(sources)'
+
+  run:
+    command: 'cabal run identify'
+    inputs:
+      - '@globs(sources)'

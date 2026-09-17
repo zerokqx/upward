@@ -2,8 +2,7 @@ use std::net::IpAddr;
 
 use sqlx::PgPool;
 
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ForbiddenIpRepository {
     pool: PgPool,
 }

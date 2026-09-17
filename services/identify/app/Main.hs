@@ -1,4 +1,8 @@
 module Main (main) where
 
+import Identify.App (startApp)
+
+
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = startApp
