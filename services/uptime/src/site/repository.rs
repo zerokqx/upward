@@ -181,6 +181,36 @@ impl SiteRepository {
 
         Ok(())
     }
+
+    pub async fn get_site_by_id(&self, site_id: SiteId) -> Result<Option<Site>, sqlx::Error> {
+        let record = sqlx::query!(
+            r#"
+            SELECT id, url, user_id, active
+            FROM sites
+            WHERE id = $1
+            "#,
+            site_id.0
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(record.map(|r| Site::with_id(SiteId(r.id), SiteUrl(r.url), UserId(r.user_id), r.active)))
+    }
+
+    pub async fn activate_site(&self, site_id: SiteId) -> Result<bool, sqlx::Error> {
+        let res = sqlx::query!(
+            r#"
+            UPDATE sites
+            SET active = TRUE
+            WHERE id = $1
+            "#,
+            site_id.0
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(res.rows_affected() > 0)
+    }
 }
 
 #[derive(Clone)]

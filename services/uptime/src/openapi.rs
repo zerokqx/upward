@@ -20,6 +20,7 @@ use utoipa::OpenApi;
         crate::server::health_check,
         crate::site::controller::create_site,
         crate::site::controller::get_all_sites,
+        crate::site::controller::verify_site,
         crate::ping::controller::get_pings,
     ),
     components(
@@ -28,6 +29,7 @@ use utoipa::OpenApi;
             crate::site::dto::CreateSiteDto,
             crate::site::dto::CreateSiteResponseDto,
             crate::site::dto::SiteResponseDto,
+            crate::site::dto::VerifySiteResponseDto,
             crate::ping::domain::PingRecord,
             crate::ping::dto::GetPingsDto,
             crate::domain::SiteId,

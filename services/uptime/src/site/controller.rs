@@ -2,7 +2,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use crate::AppState;
 use crate::blocked_ip::ForbiddenIpRepository;
-use crate::domain::UserId;
+use crate::domain::{SiteId, UserId};
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -11,11 +11,12 @@ use reqwest::Url;
 use tokio::net::lookup_host;
 
 use super::domain::Site;
-use super::dto::{CreateSiteDto, CreateSiteResponseDto, SiteResponseDto};
+use super::dto::{CreateSiteDto, CreateSiteResponseDto, SiteResponseDto, VerifySiteResponseDto};
 
 #[derive(Clone)]
 pub struct IpValidator {
     forbidden_ip_repo: ForbiddenIpRepository,
+    allow_private_ips: bool,
 }
 
 #[derive(Debug, thiserror::Error, Eq, PartialEq)]
@@ -58,7 +59,20 @@ impl From<IpValidationError> for UrlValidationError {
 
 impl IpValidator {
     pub fn new(forbidden_ip_repo: ForbiddenIpRepository) -> Self {
-        Self { forbidden_ip_repo }
+        let allow_private_ips = std::env::var("ALLOW_PRIVATE_IPS")
+            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
+            .unwrap_or(false);
+
+        Self {
+            forbidden_ip_repo,
+            allow_private_ips,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn with_allow_private_ips(mut self, allow: bool) -> Self {
+        self.allow_private_ips = allow;
+        self
     }
 
     pub async fn validate(&self, ip: IpAddr) -> Result<(), IpValidationError> {
@@ -66,7 +80,7 @@ impl IpValidator {
             IpAddr::V4(v4) => Self::is_forbidden_ipv4(v4),
             IpAddr::V6(v6) => Self::is_forbidden_ipv6(v6),
         };
-        if is_private {
+        if is_private && !self.allow_private_ips {
             return Err(IpValidationError::IpInvalid);
         }
 
@@ -300,10 +314,136 @@ pub async fn get_all_sites(
     Ok(Json(sites))
 }
 
+/// Подтвердить владение сайтом через HTTP-01 Challenge
+///
+/// Обращается по адресу {site.url}/.well-known/upward и сравнивает полученный токен
+/// с ожидаемым токеном из Redis. При совпадении активирует сайт (active = true).
+#[tracing::instrument(skip(state))]
+#[utoipa::path(
+    post,
+    path = "/sites/{site_id}/verify",
+    tag = "Sites",
+    params(
+        ("site_id" = String, Path, description = "Идентификатор подтверждаемого сайта", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+    ),
+    responses(
+        (
+            status = 200,
+            description = "Владение сайтом успешно подтверждено, сайт активирован",
+            body = VerifySiteResponseDto,
+            example = json!({ "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", "status": "verified" })
+        ),
+        (
+            status = 400,
+            description = "Некорректный запрос: токен не совпадает, челендж протух или некорректный ответ сайта",
+            body = String,
+            example = json!("Challenge token mismatch or expired")
+        ),
+        (
+            status = 404,
+            description = "Сайт не найден",
+            body = String,
+            example = json!("Site not found")
+        ),
+        (
+            status = 502,
+            description = "Ошибка связи с целевым сайтом",
+            body = String,
+            example = json!("Failed to reach challenge URL: connection refused")
+        )
+    )
+)]
+pub async fn verify_site(
+    State(state): State<AppState>,
+    Path(site_id): Path<SiteId>,
+) -> Result<Json<VerifySiteResponseDto>, (StatusCode, String)> {
+    let site = state
+        .site_repo
+        .get_site_by_id(site_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "Site not found".into()))?;
+
+    if site.active {
+        return Ok(Json(VerifySiteResponseDto {
+            id: site_id,
+            status: "already_verified",
+        }));
+    }
+
+    let mut verify_url = Url::parse(site.url.as_ref())
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid site URL: {e}")))?;
+    verify_url.set_path("/.well-known/upward");
+
+    // Защита от SSRF и DNS Rebinding перед запросом
+    let validator = IpValidator::new(state.forbidden_ip_repo);
+    validator
+        .validate_url(verify_url.as_str())
+        .await
+        .map_err(map_url_validation_error_to_response)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .redirect(reqwest::redirect::Policy::limited(3))
+        .build()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let resp = client.get(verify_url.as_str()).send().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to reach challenge URL: {e}"),
+        )
+    })?;
+
+    if !resp.status().is_success() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Challenge URL returned HTTP status {}", resp.status()),
+        ));
+    }
+
+    let returned_token = resp.text().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to read response from challenge URL: {e}"),
+        )
+    })?;
+
+    let is_valid = state
+        .challenge_repo
+        .verify_challenge(site_id, returned_token.trim())
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Redis verification error: {e}"),
+            )
+        })?;
+
+    if !is_valid {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Challenge token mismatch or expired".into(),
+        ));
+    }
+
+    state
+        .site_repo
+        .activate_site(site_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(VerifySiteResponseDto {
+        id: site_id,
+        status: "verified",
+    }))
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/sites/{user_id}", get(get_all_sites))
         .route("/sites", post(create_site))
+        .route("/sites/{site_id}/verify", post(verify_site))
 }
 #[cfg(test)]
 mod tests {
@@ -326,7 +466,7 @@ mod tests {
         let blocked_ip: IpAddr = "93.184.216.34".parse().unwrap();
         repo.block_ip(blocked_ip).await.unwrap();
 
-        let validator = IpValidator::new(repo);
+        let validator = IpValidator::new(repo.clone()).with_allow_private_ips(false);
 
         // 1. Локальный IP -> IpInvalid
         assert_eq!(
@@ -353,6 +493,17 @@ mod tests {
         assert_eq!(
             validator.validate_url("ftp://example.com").await,
             Err(UrlValidationError::UnsupportedScheme)
+        );
+
+        // 6. Режим разработки с allow_private_ips -> Ok
+        let dev_validator = IpValidator::new(repo).with_allow_private_ips(true);
+        assert_eq!(
+            dev_validator.validate("127.0.0.1".parse().unwrap()).await,
+            Ok(())
+        );
+        assert_eq!(
+            dev_validator.validate_url("http://127.0.0.1:8080/test").await,
+            Ok(())
         );
     }
 }

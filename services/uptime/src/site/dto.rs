@@ -73,3 +73,15 @@ pub struct SiteResponseDto {
     #[schema(example = true)]
     pub active: bool,
 }
+
+/// Результат подтверждения владения сайтом
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct VerifySiteResponseDto {
+    /// Идентификатор подтвержденного сайта
+    #[schema(value_type = String, example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")]
+    pub id: SiteId,
+
+    /// Статус операции
+    #[schema(example = "verified")]
+    pub status: &'static str,
+}
