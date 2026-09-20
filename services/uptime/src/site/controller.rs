@@ -2,39 +2,69 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use crate::AppState;
 use crate::blocked_ip::ForbiddenIpRepository;
+use crate::domain::UserId;
 use axum::Json;
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
+use axum::routing::{Router, get, post};
 use reqwest::Url;
 use tokio::net::lookup_host;
 
 use super::domain::Site;
 use super::dto::{CreateSiteDto, CreateSiteResponseDto, SiteResponseDto};
 
+#[derive(Clone)]
 pub struct IpValidator {
-    pub ip: IpAddr,
     forbidden_ip_repo: ForbiddenIpRepository,
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error, Eq, PartialEq)]
 pub enum IpValidationError {
+    #[error("IP is in forbidden list")]
     IpBlocked,
+    #[error("Private, loopback or local IPs are not allowed")]
     IpInvalid,
+    #[error("Database error during IP check: {0}")]
     DatabaseError(String),
 }
 
-impl IpValidator {
-    pub fn new(ip: IpAddr, forbidden_ip_repo: ForbiddenIpRepository) -> Self {
-        Self {
-            ip,
-            forbidden_ip_repo,
+#[derive(Debug, thiserror::Error, Eq, PartialEq)]
+pub enum UrlValidationError {
+    #[error("Invalid URL: {0}")]
+    InvalidUrl(String),
+    #[error("Only http and https schemes are allowed")]
+    UnsupportedScheme,
+    #[error("Missing host in URL")]
+    MissingHost,
+    #[error("Cannot resolve host: {0}")]
+    DnsError(String),
+    #[error("IP is in forbidden list")]
+    IpBlocked,
+    #[error("Private, loopback or local IPs are not allowed")]
+    IpInvalid,
+    #[error("Database error during IP check: {0}")]
+    DatabaseError(String),
+}
+
+impl From<IpValidationError> for UrlValidationError {
+    fn from(err: IpValidationError) -> Self {
+        match err {
+            IpValidationError::IpBlocked => Self::IpBlocked,
+            IpValidationError::IpInvalid => Self::IpInvalid,
+            IpValidationError::DatabaseError(e) => Self::DatabaseError(e),
         }
     }
+}
 
-    pub async fn validate(&self) -> Result<(), IpValidationError> {
-        let is_private = match self.ip {
-            IpAddr::V4(ip) => self.is_forbidden_ipv4(ip),
-            IpAddr::V6(ip) => self.is_forbidden_ipv6(ip),
+impl IpValidator {
+    pub fn new(forbidden_ip_repo: ForbiddenIpRepository) -> Self {
+        Self { forbidden_ip_repo }
+    }
+
+    pub async fn validate(&self, ip: IpAddr) -> Result<(), IpValidationError> {
+        let is_private = match ip {
+            IpAddr::V4(v4) => Self::is_forbidden_ipv4(v4),
+            IpAddr::V6(v6) => Self::is_forbidden_ipv6(v6),
         };
         if is_private {
             return Err(IpValidationError::IpInvalid);
@@ -42,7 +72,7 @@ impl IpValidator {
 
         let is_blocked = self
             .forbidden_ip_repo
-            .is_blocked(self.ip)
+            .is_blocked(ip)
             .await
             .map_err(|err| IpValidationError::DatabaseError(err.to_string()))?;
 
@@ -53,7 +83,35 @@ impl IpValidator {
         Ok(())
     }
 
-    pub fn is_forbidden_ipv4(&self, ip: Ipv4Addr) -> bool {
+    pub async fn validate_url(&self, raw_url: &str) -> Result<(), UrlValidationError> {
+        let url = Url::parse(raw_url).map_err(|e| UrlValidationError::InvalidUrl(e.to_string()))?;
+
+        if url.scheme() != "https" && url.scheme() != "http" {
+            return Err(UrlValidationError::UnsupportedScheme);
+        }
+
+        let host = url.host_str().ok_or(UrlValidationError::MissingHost)?;
+        let port = url.port_or_known_default().unwrap_or(80);
+
+        // 1. Если хост уже является IP-адресом
+        if let Ok(ip) = host.parse::<IpAddr>() {
+            self.validate(ip).await?;
+            return Ok(());
+        }
+
+        // 2. Если хост — домен, резолвим все целевые адреса через DNS
+        let addrs = lookup_host(format!("{}:{}", host, port))
+            .await
+            .map_err(|e| UrlValidationError::DnsError(e.to_string()))?;
+
+        for socket_addr in addrs {
+            self.validate(socket_addr.ip()).await?;
+        }
+
+        Ok(())
+    }
+
+    pub fn is_forbidden_ipv4(ip: Ipv4Addr) -> bool {
         ip.is_private()
             || ip.is_loopback()
             || ip.is_link_local()
@@ -66,61 +124,37 @@ impl IpValidator {
             || ip.is_multicast()
     }
 
-    pub fn is_forbidden_ipv6(&self, ip: Ipv6Addr) -> bool {
+    pub fn is_forbidden_ipv6(ip: Ipv6Addr) -> bool {
         ip.is_loopback()
             || ip.is_unspecified()
             || (ip.segments()[0] & 0xfe00) == 0xfc00
             || (ip.segments()[0] & 0xffc0) == 0xfe80
-            || ip
-                .to_ipv4_mapped()
-                .is_some_and(|v4| self.is_forbidden_ipv4(v4))
+            || ip.to_ipv4_mapped().is_some_and(Self::is_forbidden_ipv4)
             || ip.is_multicast()
     }
 }
 
-fn map_ip_forbidden_error_to_response(err: IpValidationError) -> (StatusCode, String) {
+fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode, String) {
     match err {
-        IpValidationError::IpBlocked => (StatusCode::FORBIDDEN, "IP is in forbidden list".into()),
-        IpValidationError::IpInvalid => (
+        UrlValidationError::InvalidUrl(e) => (StatusCode::BAD_REQUEST, format!("Invalid URL: {e}")),
+        UrlValidationError::UnsupportedScheme => (
+            StatusCode::BAD_REQUEST,
+            "Only http and https schemes are allowed".into(),
+        ),
+        UrlValidationError::MissingHost => (StatusCode::BAD_REQUEST, "Missing host in URL".into()),
+        UrlValidationError::DnsError(e) => {
+            (StatusCode::BAD_REQUEST, format!("Cannot resolve host: {e}"))
+        }
+        UrlValidationError::IpBlocked => (StatusCode::FORBIDDEN, "IP is in forbidden list".into()),
+        UrlValidationError::IpInvalid => (
             StatusCode::FORBIDDEN,
             "Private, loopback or local IPs are not allowed".into(),
         ),
-        IpValidationError::DatabaseError(e) => (
+        UrlValidationError::DatabaseError(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Database error during IP check: {e}"),
         ),
     }
-}
-
-async fn validate_host(
-    host: &str,
-    port: u16,
-    repo: ForbiddenIpRepository,
-) -> Result<(), (StatusCode, String)> {
-    // 1. Если хост уже является IP-адресом
-    if let Ok(ip) = host.parse::<IpAddr>() {
-        let validator = IpValidator::new(ip, repo);
-        return validator
-            .validate()
-            .await
-            .map_err(map_ip_forbidden_error_to_response);
-    }
-
-    // 2. Если хост — это доменное имя, резолвим его адреса через DNS
-    let addrs = lookup_host(format!("{}:{}", host, port))
-        .await
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Cannot resolve host: {e}")))?;
-
-    for socket_addr in addrs {
-        let ip = socket_addr.ip();
-        let validator = IpValidator::new(ip, repo.clone());
-        validator
-            .validate()
-            .await
-            .map_err(map_ip_forbidden_error_to_response)?;
-    }
-
-    Ok(())
 }
 
 /// Добавить новый сайт в мониторинг
@@ -146,7 +180,12 @@ async fn validate_host(
             status = 201,
             description = "Сайт успешно добавлен в систему мониторинга",
             body = CreateSiteResponseDto,
-            example = json!({ "id": 1, "status": "created" })
+            example = json!({
+                "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                "status": "pending_verification",
+                "challenge_token": "b428d082-356a-4b92-808c-901a1e582845",
+                "challenge_path": "/.well-known/upward"
+            })
         ),
         (
             status = 400,
@@ -172,22 +211,11 @@ pub async fn create_site(
     State(state): State<AppState>,
     Json(body): Json<CreateSiteDto>,
 ) -> Result<(StatusCode, Json<CreateSiteResponseDto>), (StatusCode, String)> {
-    let url = Url::parse(body.site.as_ref())
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid URL: {e}")))?;
-
-    if url.scheme() != "https" && url.scheme() != "http" {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Only http and https schemes are allowed".into(),
-        ));
-    }
-
-    let host = url
-        .host_str()
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, "Missing host in URL".into()))?;
-    let port = url.port_or_known_default().unwrap_or(80);
-
-    validate_host(host, port, state.forbidden_ip_repo).await?;
+    let validator = IpValidator::new(state.forbidden_ip_repo);
+    validator
+        .validate_url(body.site.as_ref())
+        .await
+        .map_err(map_url_validation_error_to_response)?;
 
     let site = Site::new(body.site, body.user_id);
     let site_id = state.site_repo.save_site(&site).await.map_err(|e| {
@@ -197,23 +225,39 @@ pub async fn create_site(
         )
     })?;
 
+    let challenge_token = match state.challenge_repo.new_challenge(site_id).await {
+        Ok(token) => token,
+        Err(err) => {
+            let _ = state.site_repo.delete_site(site_id).await;
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to generate challenge token: {err}"),
+            ));
+        }
+    };
+
     Ok((
         StatusCode::CREATED,
         Json(CreateSiteResponseDto {
             id: site_id,
-            status: "created",
+            status: "pending_verification",
+            challenge_token,
+            challenge_path: "/.well-known/upward",
         }),
     ))
 }
 
-/// Получить список всех отслеживаемых сайтов
+/// Получить список отслеживаемых сайтов пользователя
 ///
-/// Возвращает список всех зарегистрированных сайтов вместе со статусом и доп. данными последней проверки доступности.
+/// Возвращает список всех зарегистрированных сайтов конкретного пользователя вместе со статусом и доп. данными последней проверки доступности.
 #[tracing::instrument(skip(state))]
 #[utoipa::path(
     get,
-    path = "/sites",
+    path = "/sites/{user_id}",
     tag = "Sites",
+    params(
+        ("user_id" = String, Path, description = "Идентификатор пользователя-владельца сайтов", example = "usr_01J8ABCDEF1234567890")
+    ),
     responses(
         (
             status = 200,
@@ -221,7 +265,7 @@ pub async fn create_site(
             body = Vec<SiteResponseDto>,
             example = json!([
                 {
-                    "id": 1,
+                    "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                     "user_id": "usr_01J8ABCDEF1234567890",
                     "url": "https://example.com",
                     "created_at": "2026-09-15T12:00:00Z",
@@ -245,12 +289,70 @@ pub async fn create_site(
 )]
 pub async fn get_all_sites(
     State(state): State<AppState>,
+    Path(user_id): Path<UserId>,
 ) -> Result<Json<Vec<SiteResponseDto>>, (StatusCode, String)> {
     let sites = state
         .site_repo
-        .get_all_sites()
+        .get_all_sites_for_user(&user_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(sites))
+}
+
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/sites/{user_id}", get(get_all_sites))
+        .route("/sites", post(create_site))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::PgPool;
+
+    #[test]
+    fn test_forbidden_ipv4_pure() {
+        assert!(IpValidator::is_forbidden_ipv4("127.0.0.1".parse().unwrap()));
+        assert!(IpValidator::is_forbidden_ipv4(
+            "192.168.1.1".parse().unwrap()
+        ));
+        assert!(IpValidator::is_forbidden_ipv4("10.0.0.1".parse().unwrap()));
+        assert!(!IpValidator::is_forbidden_ipv4("8.8.8.8".parse().unwrap()));
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn test_ip_validation(pool: PgPool) {
+        let repo = ForbiddenIpRepository::new(pool);
+        let blocked_ip: IpAddr = "93.184.216.34".parse().unwrap();
+        repo.block_ip(blocked_ip).await.unwrap();
+
+        let validator = IpValidator::new(repo);
+
+        // 1. Локальный IP -> IpInvalid
+        assert_eq!(
+            validator.validate("127.0.0.1".parse().unwrap()).await,
+            Err(IpValidationError::IpInvalid)
+        );
+
+        // 2. Заблокированный в БД IP -> IpBlocked
+        assert_eq!(
+            validator.validate(blocked_ip).await,
+            Err(IpValidationError::IpBlocked)
+        );
+
+        // 3. Нормальный публичный IP -> Ok
+        assert_eq!(validator.validate("8.8.8.8".parse().unwrap()).await, Ok(()));
+
+        // 4. URL с локальным IP -> IpInvalid
+        assert_eq!(
+            validator.validate_url("http://127.0.0.1:8080/test").await,
+            Err(UrlValidationError::IpInvalid)
+        );
+
+        // 5. Неподдерживаемая схема -> UnsupportedScheme
+        assert_eq!(
+            validator.validate_url("ftp://example.com").await,
+            Err(UrlValidationError::UnsupportedScheme)
+        );
+    }
 }

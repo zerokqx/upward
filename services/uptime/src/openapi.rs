@@ -17,16 +17,19 @@ use utoipa::OpenApi;
         (url = "/", description = "Текущий экземпляр сервиса")
     ),
     paths(
-        crate::health_check,
+        crate::server::health_check,
         crate::site::controller::create_site,
         crate::site::controller::get_all_sites,
+        crate::ping::controller::get_pings,
     ),
     components(
         schemas(
-            crate::HealthResponseDto,
+            crate::server::HealthResponseDto,
             crate::site::dto::CreateSiteDto,
             crate::site::dto::CreateSiteResponseDto,
             crate::site::dto::SiteResponseDto,
+            crate::ping::domain::PingRecord,
+            crate::ping::dto::GetPingsDto,
             crate::domain::SiteId,
             crate::domain::UserId,
             crate::domain::SiteUrl,
@@ -35,7 +38,8 @@ use utoipa::OpenApi;
     ),
     tags(
         (name = "Health", description = "Проверка состояния и доступности микросервиса"),
-        (name = "Sites", description = "Регистрация целевых сайтов и получение статусов проверок")
+        (name = "Sites", description = "Регистрация целевых сайтов и получение статусов проверок"),
+        (name = "Pings", description = "История и результаты проверок доступности")
     )
 )]
 pub struct ApiDoc;

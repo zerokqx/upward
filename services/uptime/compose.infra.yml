@@ -13,5 +13,15 @@ services:
     volumes:
       - tsdata:/var/lib/postgresql/data # Сохранение данных на диске хоста
 
+  redis:
+    image: redis:7-alpine
+    container_name: uptime-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
 volumes:
   tsdata: # Именованный том для таймскейла
+  redisdata: # Именованный том для Redis

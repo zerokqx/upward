@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 
-use crate::domain::SiteId;
+use crate::domain::{SiteId, UserId};
 
 use super::domain::{PingExecution, PingRecord};
 
@@ -55,5 +55,33 @@ impl PingRepository {
         query_builder.build().execute(&self.pool).await?;
 
         Ok(())
+    }
+
+    pub async fn get_pings(
+        &self,
+        user_id: &UserId,
+        site_id: &SiteId,
+    ) -> Result<Vec<PingRecord>, sqlx::Error> {
+        let result = sqlx::query_as!(
+            PingRecord,
+            r#"
+            SELECT 
+                s.id AS site_id,
+                p.duration_ms,
+                p.extra
+            FROM sites s
+            JOIN site_pings p ON p.site_id = s.id
+            WHERE s.user_id = $1
+              AND s.id = $2
+              AND p.time >= NOW() - INTERVAL '30 days'
+            ORDER BY p.time DESC
+            "#,
+            user_id.0,
+            site_id.0
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(result)
     }
 }

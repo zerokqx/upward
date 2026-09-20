@@ -1,16 +1,38 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+use uuid::Uuid;
+
 /// Идентификатор сайта
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema, sqlx::Type,
 )]
 #[sqlx(transparent)]
-pub struct SiteId(pub i64);
+pub struct SiteId(pub Uuid);
 
 impl fmt::Display for SiteId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl From<Uuid> for SiteId {
+    fn from(id: Uuid) -> Self {
+        SiteId(id)
+    }
+}
+
+impl From<SiteId> for Uuid {
+    fn from(id: SiteId) -> Self {
+        id.0
+    }
+}
+
+impl std::str::FromStr for SiteId {
+    type Err = uuid::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse::<Uuid>().map(SiteId)
     }
 }
 

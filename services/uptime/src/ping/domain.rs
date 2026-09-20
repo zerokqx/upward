@@ -21,7 +21,7 @@ pub struct PingExecution {
 }
 
 /// Запись замера доступности, подготовленная для сохранения в базу данных
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PingRecord {
     pub site_id: SiteId,
     pub duration_ms: f64,

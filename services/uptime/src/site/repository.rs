@@ -1,4 +1,6 @@
+use redis::AsyncCommands;
 use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::domain::{SiteId, SiteStatus, SiteUrl, UserId};
 
@@ -16,6 +18,7 @@ pub(crate) struct SiteWithLastPingDbRow {
     pub status: SiteStatus,
     pub status_updated_at: chrono::DateTime<chrono::Utc>,
     pub extra: Option<serde_json::Value>,
+    pub active: bool,
 }
 
 impl From<SiteWithLastPingDbRow> for SiteResponseDto {
@@ -29,6 +32,7 @@ impl From<SiteWithLastPingDbRow> for SiteResponseDto {
             status: row.status,
             status_updated_at: row.status_updated_at,
             extra: row.extra,
+            active: row.active,
         }
     }
 }
@@ -46,12 +50,13 @@ impl SiteRepository {
     pub async fn save_site(&self, site: &Site) -> Result<SiteId, sqlx::Error> {
         let res = sqlx::query!(
             r#"
-        INSERT INTO sites (user_id, url)
-        VALUES ($1, $2)
+        INSERT INTO sites (user_id, url, active)
+        VALUES ($1, $2, $3)
         RETURNING id
         "#,
             site.user_id.0,
-            site.url.0
+            site.url.0,
+            site.active
         )
         .fetch_one(&self.pool)
         .await;
@@ -69,7 +74,10 @@ impl SiteRepository {
         }
     }
 
-    pub async fn get_all_sites(&self) -> Result<Vec<SiteResponseDto>, sqlx::Error> {
+    pub async fn get_all_sites_for_user(
+        &self,
+        user_id: &UserId,
+    ) -> Result<Vec<SiteResponseDto>, sqlx::Error> {
         let rows = sqlx::query_as!(
             SiteWithLastPingDbRow,
             r#"
@@ -81,6 +89,7 @@ impl SiteRepository {
                 s.last_check, 
                 s.status as "status: SiteStatus", 
                 s.status_updated_at,
+                s.active,
                 p.extra
             FROM sites s
             LEFT JOIN LATERAL (
@@ -90,8 +99,10 @@ impl SiteRepository {
                 ORDER BY time DESC
                 LIMIT 1
             ) p ON true
+            WHERE s.user_id = $1
             ORDER BY s.id
-            "#
+            "#,
+            user_id.0
         )
         .fetch_all(&self.pool)
         .await?;
@@ -105,8 +116,11 @@ impl SiteRepository {
             WITH target_sites AS (
                 SELECT id
                 FROM sites
-                WHERE (status = 'idle' AND (last_check IS NULL OR last_check < NOW() - INTERVAL '60 seconds'))
-                   OR (status = 'processing' AND status_updated_at < NOW() - INTERVAL '3 minutes')
+                WHERE active = TRUE
+                  AND (
+                    (status = 'idle' AND (last_check IS NULL OR last_check < NOW() - INTERVAL '60 seconds'))
+                    OR (status = 'processing' AND status_updated_at < NOW() - INTERVAL '3 minutes')
+                  )
                 ORDER BY last_check ASC NULLS FIRST
                 LIMIT $1
                 FOR UPDATE SKIP LOCKED
@@ -116,7 +130,7 @@ impl SiteRepository {
                 status_updated_at = NOW()
             FROM target_sites ts
             WHERE s.id = ts.id
-            RETURNING s.id, s.url, s.user_id
+            RETURNING s.id, s.url, s.user_id, s.active
             "#,
             limit
         )
@@ -125,7 +139,7 @@ impl SiteRepository {
 
         let sites = records
             .into_iter()
-            .map(|r| Site::with_id(SiteId(r.id), SiteUrl(r.url), UserId(r.user_id)))
+            .map(|r| Site::with_id(SiteId(r.id), SiteUrl(r.url), UserId(r.user_id), r.active))
             .collect();
 
         Ok(sites)
@@ -136,7 +150,7 @@ impl SiteRepository {
             return Ok(());
         }
 
-        let raw_ids: Vec<i64> = site_ids.iter().map(|id| id.0).collect();
+        let raw_ids: Vec<uuid::Uuid> = site_ids.iter().map(|id| id.0).collect();
 
         sqlx::query!(
             r#"
@@ -152,5 +166,52 @@ impl SiteRepository {
         .await?;
 
         Ok(())
+    }
+
+    pub async fn delete_site(&self, site_id: SiteId) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"
+            DELETE FROM sites
+            WHERE id = $1
+            "#,
+            site_id.0
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct ChallengeRepository {
+    redis: redis::aio::MultiplexedConnection,
+}
+
+impl ChallengeRepository {
+    pub fn new(redis: redis::aio::MultiplexedConnection) -> Self {
+        Self { redis }
+    }
+
+    pub async fn new_challenge(&self, site_id: SiteId) -> Result<String, redis::RedisError> {
+        let mut conn = self.redis.clone();
+        let token = Uuid::new_v4().to_string();
+        let key = format!("challenge:{}:{}", site_id, token);
+        let _: () = conn.set_ex(key, 1, 86400).await?;
+        Ok(token)
+    }
+
+    pub async fn verify_challenge(
+        &self,
+        site_id: SiteId,
+        token: &str,
+    ) -> Result<bool, redis::RedisError> {
+        let mut conn = self.redis.clone();
+        let key = format!("challenge:{}:{}", site_id, token);
+        let exists: bool = conn.exists(&key).await?;
+        if exists {
+            let _: () = conn.del(&key).await?;
+        }
+        Ok(exists)
     }
 }
