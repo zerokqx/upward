@@ -384,7 +384,7 @@ pub async fn verify_site(
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
-        .redirect(reqwest::redirect::Policy::limited(3))
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -502,7 +502,9 @@ mod tests {
             Ok(())
         );
         assert_eq!(
-            dev_validator.validate_url("http://127.0.0.1:8080/test").await,
+            dev_validator
+                .validate_url("http://127.0.0.1:8080/test")
+                .await,
             Ok(())
         );
     }
