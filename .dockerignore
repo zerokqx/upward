@@ -1,0 +1,12 @@
+target/
+node_modules/
+.git
+.devenv
+.devenv*
+.direnv
+.moon/cache
+dist/
+_build/
+dist-newstyle/
+*.env
+*.env.*

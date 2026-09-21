@@ -135,6 +135,7 @@ impl IpValidator {
             || matches!(ip.octets(), [192, 0, 2, ..])
             || matches!(ip.octets(), [198, 51, 100, ..])
             || matches!(ip.octets(), [203, 0, 113, ..])
+            || matches!(ip.octets()[0], 0)
             || ip.is_multicast()
     }
 
@@ -457,6 +458,8 @@ mod tests {
             "192.168.1.1".parse().unwrap()
         ));
         assert!(IpValidator::is_forbidden_ipv4("10.0.0.1".parse().unwrap()));
+        assert!(IpValidator::is_forbidden_ipv4("0.0.0.1".parse().unwrap()));
+        assert!(IpValidator::is_forbidden_ipv4("0.255.255.254".parse().unwrap()));
         assert!(!IpValidator::is_forbidden_ipv4("8.8.8.8".parse().unwrap()));
     }
 

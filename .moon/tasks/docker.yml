@@ -1,0 +1,17 @@
+inheritedBy:
+  files:
+    - "Dockerfile"
+
+tasks:
+  docker-build:
+    command: "docker build -t upward-$project -f Dockerfile ."
+    inputs:
+      - "Dockerfile"
+      - "@globs(sources)"
+    options:
+      cache: false
+
+  docker-run:
+    command: "docker run --rm -it -p 3000:3000 --name upward-$project upward-$project"
+    options:
+      cache: false
