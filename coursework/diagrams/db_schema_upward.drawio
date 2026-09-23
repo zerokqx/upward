@@ -1,0 +1,145 @@
+<mxfile host="app.diagrams.net" modified="2026-09-22T12:00:00.000Z" agent="Upward DB Schema Generator" version="21.6.8" type="device">
+  <diagram id="db_schema_diagram" name="Схема базы данных (ERD)">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#f8fafc">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Заголовок -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size: 16px;&quot;&gt;СХЕМА БАЗЫ ДАННЫХ И ХРАНИЛИЩА ТЕЛЕМЕТРИИ СИСТЕМЫ «UPWARD»&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; color: #475569;&quot;&gt;PostgreSQL 16 + Расширение TimescaleDB (Hypertables &amp; Data Retention) + Redis 7&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="234" y="20" width="700" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== ТАБЛИЦА 1: SITES ==================== -->
+        <mxCell id="tbl_sites_header" value="&lt;b&gt;sites (Реляционная таблица ресурсов)&lt;/b&gt;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#2563eb;strokeColor=#1d4ed8;fontColor=#ffffff;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="60" y="110" width="340" height="270" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f1" value="PK | id : UUID (gen_random_uuid())" style="text;strokeColor=none;fillColor=#eff6ff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontStyle=1;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="30" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f2" value="     user_id : TEXT NOT NULL" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="56" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f3" value="     url : TEXT NOT NULL (http/https)" style="text;strokeColor=none;fillColor=#f8fafc;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="82" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f4" value="     created_at : TIMESTAMPTZ DEFAULT NOW()" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="108" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f5" value="IX | last_check : TIMESTAMPTZ" style="text;strokeColor=none;fillColor=#f8fafc;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="134" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f6" value="IX | status : VARCHAR(20) DEFAULT 'idle'" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="160" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f7" value="IX | status_updated_at : TIMESTAMPTZ" style="text;strokeColor=none;fillColor=#f8fafc;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="186" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f8" value="     active : BOOLEAN DEFAULT FALSE" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="212" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="site_f9" value="Индексы: sites_pkey, idx_sites_last_check, idx_status_last_check" style="text;strokeColor=none;fillColor=#eff6ff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Arial;fontSize=9;fontColor=#475569;" vertex="1" parent="tbl_sites_header">
+          <mxGeometry y="238" width="340" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== ТАБЛИЦА 2: SITE_PINGS ==================== -->
+        <mxCell id="tbl_pings_header" value="&lt;b&gt;site_pings (TimescaleDB Hypertable)&lt;/b&gt;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#0d9488;strokeColor=#0f766e;fontColor=#ffffff;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="490" y="110" width="360" height="270" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f1" value="PK | time : TIMESTAMPTZ NOT NULL (Partition Key)" style="text;strokeColor=none;fillColor=#f0fdfa;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontStyle=1;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="30" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f2" value="FK | site_id : UUID NOT NULL (FK -> sites.id)" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontStyle=1;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="56" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f3" value="     duration_ms : DOUBLE PRECISION NOT NULL" style="text;strokeColor=none;fillColor=#f8fafc;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="82" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f4" value="     extra : JSONB (status_code, error, ip, meta)" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="108" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f5" value="TimescaleDB Свойства:" style="text;strokeColor=none;fillColor=#ccfbf1;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Arial;fontSize=10;fontStyle=1;fontColor=#0f766e;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="134" width="360" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f6" value="• create_hypertable('site_pings', 'time')" style="text;strokeColor=none;fillColor=#f0fdfa;align=left;verticalAlign=middle;spacingLeft=12;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Courier New;fontSize=10;fontColor=#0f766e;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="158" width="360" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f7" value="• add_retention_policy(INTERVAL '30 days')" style="text;strokeColor=none;fillColor=#f0fdfa;align=left;verticalAlign=middle;spacingLeft=12;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Courier New;fontSize=10;fontColor=#0f766e;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="182" width="360" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f8" value="• ON DELETE CASCADE по внешнему ключу site_id" style="text;strokeColor=none;fillColor=#f0fdfa;align=left;verticalAlign=middle;spacingLeft=12;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Courier New;fontSize=10;fontColor=#0f766e;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="206" width="360" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="ping_f9" value="Автоматическое секционирование чанков по времени" style="text;strokeColor=none;fillColor=#ccfbf1;align=center;verticalAlign=middle;overflow=hidden;rotatable=0;fontFamily=Arial;fontSize=9;fontColor=#115e59;" vertex="1" parent="tbl_pings_header">
+          <mxGeometry y="230" width="360" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== СВЯЗЬ: SITES 1 - N SITE_PINGS ==================== -->
+        <mxCell id="rel_sites_pings" value="1 : N&lt;br&gt;(ON DELETE CASCADE)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0f766e;strokeWidth=2;fontSize=10;fontFamily=Arial;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="site_f1" target="ping_f2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="445" y="153"/>
+              <mxPoint x="445" y="179"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ==================== ТАБЛИЦА 3: FORBIDDEN_IP ==================== -->
+        <mxCell id="tbl_fip_header" value="&lt;b&gt;forbidden_ip (Черный список SSRF)&lt;/b&gt;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#e11d48;strokeColor=#be123c;fontColor=#ffffff;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="60" y="440" width="340" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="fip_f1" value="PK | id : BIGSERIAL" style="text;strokeColor=none;fillColor=#fff1f2;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontStyle=1;" vertex="1" parent="tbl_fip_header">
+          <mxGeometry y="30" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="fip_f2" value="UQ | ip : TEXT NOT NULL (IP / CIDR)" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontStyle=1;" vertex="1" parent="tbl_fip_header">
+          <mxGeometry y="56" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="fip_f3" value="     created_at : TIMESTAMPTZ DEFAULT NOW()" style="text;strokeColor=none;fillColor=#f8fafc;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_fip_header">
+          <mxGeometry y="82" width="340" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="fip_f4" value="Индекс: UNIQUE idx_forbidden_ip_ip ON forbidden_ip(ip)" style="text;strokeColor=none;fillColor=#ffe4e6;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Courier New;fontSize=9;fontColor=#9f1239;" vertex="1" parent="tbl_fip_header">
+          <mxGeometry y="108" width="340" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="fip_f5" value="Используется модулем IpValidator для мгновенного отсечения запрещенных сетей" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Arial;fontSize=9;fontColor=#475569;" vertex="1" parent="tbl_fip_header">
+          <mxGeometry y="136" width="340" height="34" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== СУЩНОСТЬ 4: REDIS ==================== -->
+        <mxCell id="tbl_redis_header" value="&lt;b&gt;Redis In-Memory (Верификация HTTP-01)&lt;/b&gt;" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ea580c;strokeColor=#c2410c;fontColor=#ffffff;fontSize=13;fontFamily=Arial;" vertex="1" parent="1">
+          <mxGeometry x="490" y="440" width="360" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="red_f1" value="KEY | challenge:{site_id}:{token} (String)" style="text;strokeColor=none;fillColor=#fff7ed;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontStyle=1;" vertex="1" parent="tbl_redis_header">
+          <mxGeometry y="30" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="red_f2" value="VAL | token : UUIDv4 (128-битный токен)" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_redis_header">
+          <mxGeometry y="56" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="red_f3" value="TTL | 86400 секунд (Срок жизни 24 часа)" style="text;strokeColor=none;fillColor=#ffedd5;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;fontColor=#9a3412;" vertex="1" parent="tbl_redis_header">
+          <mxGeometry y="82" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="red_f4" value="PATH| /.well-known/upward на сервере владельца" style="text;strokeColor=none;fillColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontFamily=Courier New;fontSize=11;" vertex="1" parent="tbl_redis_header">
+          <mxGeometry y="108" width="360" height="26" as="geometry"/>
+        </mxCell>
+        <mxCell id="red_f5" value="После подтверждения ключ удаляется, а в sites выставляется active = true" style="text;strokeColor=none;fillColor=#fff7ed;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=4;overflow=hidden;rotatable=0;fontFamily=Arial;fontSize=9;fontColor=#9a3412;" vertex="1" parent="tbl_redis_header">
+          <mxGeometry y="134" width="360" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- ==================== СВЯЗЬ: SITES 1 - 1 REDIS ==================== -->
+        <mxCell id="rel_sites_redis" value="1 : 1 (Временный токен HTTP-01)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#ea580c;strokeWidth=2;fontSize=10;fontFamily=Arial;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="site_f8" target="red_f1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="445" y="335"/>
+              <mxPoint x="445" y="483"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ==================== БЛОК ПОЯСНЕНИЙ СПРАВА ==================== -->
+        <mxCell id="notes_box" value="&lt;b&gt;АРХИТЕКТУРНЫЕ ОСОБЕННОСТИ&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;1. Атомарность захвата:&lt;/b&gt;&lt;br&gt;Выборка пачек сайтов воркерами выполняется через CTE с директивой &lt;i&gt;FOR UPDATE SKIP LOCKED&lt;/i&gt;, исключающей race condition между репликами.&lt;br&gt;&lt;br&gt;&lt;b&gt;2. Dead Worker Recovery:&lt;/b&gt;&lt;br&gt;Поле &lt;i&gt;status_updated_at&lt;/i&gt; возвращает зависшие задачи в статус 'idle' через 3 минуты.&lt;br&gt;&lt;br&gt;&lt;b&gt;3. Time-Series Hypertable:&lt;/b&gt;&lt;br&gt;Таблица &lt;i&gt;site_pings&lt;/i&gt; партиционируется TimescaleDB по времени &lt;i&gt;time&lt;/i&gt;. Устаревшие чанки старше 30 дней удаляются мгновенно без блокировок.&lt;br&gt;&lt;br&gt;&lt;b&gt;4. Многоуровневый SSRF-фильтр:&lt;/b&gt;&lt;br&gt;Запросы к loopback, RFC 1918 и адресам из &lt;i&gt;forbidden_ip&lt;/i&gt; отклоняются до открытия TCP-сокета." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#cbd5e1;strokeWidth=1.5;align=left;verticalAlign=top;spacing=12;fontFamily=Arial;fontSize=11;lineHeight=1.4;" vertex="1" parent="1">
+          <mxGeometry x="880" y="110" width="250" height="500" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -5,8 +5,8 @@ use tracing::debug;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::AppState;
 use crate::openapi::ApiDoc;
-use crate::{AppState, ping, site};
 
 /// Ответ эндпоинта проверки работоспособности сервиса
 #[derive(Serialize, utoipa::ToSchema)]
@@ -16,7 +16,7 @@ pub struct HealthResponseDto {
     pub status: &'static str,
 
     /// Пояснительное сообщение
-    #[schema(example = "Uptime monitoring service is running")]
+    #[schema(example = "Identify service is running")]
     pub message: &'static str,
 }
 
@@ -36,7 +36,7 @@ pub struct HealthResponseDto {
             body = HealthResponseDto,
             example = json!({
                 "status": "ok",
-                "message": "Uptime monitoring service is running"
+                "message": "Identify service is running"
             })
         )
     )
@@ -44,7 +44,7 @@ pub struct HealthResponseDto {
 pub async fn health_check() -> (StatusCode, Json<HealthResponseDto>) {
     let response = HealthResponseDto {
         status: "ok",
-        message: "Uptime monitoring service is running",
+        message: "Identify service is running",
     };
     (StatusCode::OK, Json(response))
 }
@@ -54,8 +54,6 @@ pub fn create_app(state: AppState) -> Router {
     Router::new()
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
         .route("/health", get(health_check))
-        .merge(site::routes())
-        .merge(ping::routes())
         .with_state(state)
 }
 

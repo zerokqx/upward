@@ -194,7 +194,10 @@ impl SiteRepository {
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(record.map(|r| Site::with_id(SiteId(r.id), SiteUrl(r.url), UserId(r.user_id), r.active)))
+        Ok(
+            record
+                .map(|r| Site::with_id(SiteId(r.id), SiteUrl(r.url), UserId(r.user_id), r.active)),
+        )
     }
 
     pub async fn activate_site(&self, site_id: SiteId) -> Result<bool, sqlx::Error> {

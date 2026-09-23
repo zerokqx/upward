@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: mypassword  # Пароль
       POSTGRES_DB: uptimedb          # Название базы данных
     ports:
-      - "5432:5432"                  # Проброс портов (стандартный для Postgres)
+      - "127.0.0.1:5432:5432"                  # Проброс портов (стандартный для Postgres)
     volumes:
       - tsdata:/var/lib/postgresql/data # Сохранение данных на диске хоста
 

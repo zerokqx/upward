@@ -38,11 +38,7 @@ pub struct AppState {
     pub challenge_repo: ChallengeRepository,
 }
 
-async fn check_single_site(
-    site: Site,
-    validator: &IpValidator,
-    pinger: &HttpPinger,
-) -> PingRecord {
+async fn check_single_site(site: Site, validator: &IpValidator, pinger: &HttpPinger) -> PingRecord {
     let site_id = site.id.expect("site id required");
 
     if let Err(err) = validator.validate_url(site.url.as_ref()).await {

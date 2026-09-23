@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 820" width="1240" height="820" style="background:#ECE9D8;">
+  <defs>
+    <marker id="arr-black" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000"/>
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#9333EA"/>
+    </marker>
+  </defs>
+  
+    <!-- Ramus Frame Border -->
+    <rect x="20" y="20" width="1200" height="780" fill="#FFFEEB" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Top Header Table -->
+    <rect x="20" y="20" width="180" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="28" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">ИСПОЛЬЗУЕТСЯ В:</text>
+    
+    <rect x="200" y="20" width="270" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="208" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">АВТОР: <tspan font-weight="normal">Шахсинов М. В.</tspan></text>
+    <text x="208" y="54" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">ПРОЕКТ: <tspan font-weight="normal">ИС мониторинга Upward (TO-BE)</tspan></text>
+    <text x="208" y="82" font-size="9" font-family="Arial" font-weight="bold" fill="#000000">ЗАМЕЧАНИЯ: 1 2 3 4 5 6 7 8 9 10</text>
+    
+    <rect x="470" y="20" width="150" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="478" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">ДАТА: <tspan font-weight="normal">22.09.2026</tspan></text>
+    <text x="478" y="54" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">РЕВИЗИЯ: <tspan font-weight="normal">22.09.2026</tspan></text>
+    
+    <rect x="620" y="20" width="190" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="628" y="36" font-size="9" font-family="Arial" font-weight="bold" fill="#000000">■ РАЗРАБАТЫВАЕТСЯ</text>
+    <text x="628" y="50" font-size="9" font-family="Arial" fill="#000000">□ ЧЕРНОВИК</text>
+    <text x="628" y="64" font-size="9" font-family="Arial" fill="#000000">□ РЕКОМЕНДОВАНО</text>
+    <text x="628" y="78" font-size="9" font-family="Arial" fill="#000000">□ ПУБЛИКАЦИЯ</text>
+    
+    <rect x="810" y="20" width="190" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="818" y="38" font-size="10" font-family="Arial" fill="#000000">ЧИТАТЕЛЬ</text>
+    <text x="918" y="38" font-size="10" font-family="Arial" fill="#000000">ДАТА</text>
+    <line x1="810" y1="44" x2="1000" y2="44" stroke="#000000" stroke-width="0.7"/>
+    
+    <rect x="1000" y="20" width="220" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="1008" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">КОНТЕКСТ:</text>
+    <text x="1110" y="64" font-size="14" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#000000">А-0</text>
+    
+    <!-- Bottom Footer Table -->
+    <rect x="20" y="760" width="200" height="40" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="30" y="785" font-size="11" font-family="Arial" font-weight="bold" fill="#000000">Ветка: А0</text>
+    
+    <rect x="220" y="760" width="800" height="40" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="620" y="785" font-size="12" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#000000">Название: Автоматизированный мониторинг веб-ресурсов системой Upward (TO-BE)</text>
+    
+    <rect x="1020" y="760" width="200" height="40" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="1120" y="785" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#000000">Номер: 5</text>
+    
+    <rect x="180" y="150" width="175" height="90" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.8"/>
+    <line x1="180" y1="166" x2="196" y2="150" stroke="#9333EA" stroke-width="1.8"/>
+    <text x="267" y="191" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">Регистрация, валидация SSRF</text><text x="267" y="207" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">и верификация ресурсов</text>
+    <text x="347" y="232" font-size="11" font-family="Arial" font-weight="bold" text-anchor="end" fill="#581C87">А1</text>
+    
+    <rect x="410" y="285" width="175" height="90" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.8"/>
+    <line x1="410" y1="301" x2="426" y2="285" stroke="#9333EA" stroke-width="1.8"/>
+    <text x="497" y="326" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">Атомарный захват батчей</text><text x="497" y="342" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">и параллельный опрос узлов</text>
+    <text x="577" y="367" font-size="11" font-family="Arial" font-weight="bold" text-anchor="end" fill="#581C87">А2</text>
+    
+    <rect x="640" y="420" width="175" height="90" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.8"/>
+    
+    <text x="727" y="461" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">Анализ ответов, запись в гипер-</text><text x="727" y="477" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">таблицу и детекция сбоев</text>
+    <text x="807" y="502" font-size="11" font-family="Arial" font-weight="bold" text-anchor="end" fill="#581C87">А3</text>
+    
+    <rect x="870" y="555" width="175" height="90" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.8"/>
+    
+    <text x="957" y="596" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">Агрегация метрик, отображение</text><text x="957" y="612" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">в Swagger/BFF и алертинг</text>
+    <text x="1037" y="637" font-size="11" font-family="Arial" font-weight="bold" text-anchor="end" fill="#581C87">А4</text>
+    
+    <path d="M 30 170 L 180 170" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="175" y="163" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Запросы REST API / Swagger</text>
+    
+    <path d="M 30 210 L 180 210" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arr-black)"/>
+    <text x="175" y="203" font-size="9" font-family="Arial" text-anchor="end" fill="#000000">Конфигурации ресурсов</text>
+    
+    <path d="M 355 195 L 385 195 L 385 330 L 410 330" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="380" y="260" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Сайты в БД (active=true)</text>
+    
+    <path d="M 585 330 L 615 330 L 615 465 L 640 465" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="610" y="395" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Замеры сетевых зондов</text>
+    
+    <path d="M 815 465 L 845 465 L 845 600 L 870 600" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="840" y="530" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Метрики и инциденты</text>
+    
+    <path d="M 930 645 L 930 675 L 440 675 L 440 375" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="685" y="668" font-size="9" font-family="Arial" text-anchor="middle" fill="#7E22CE">Фиксация last_check и сброс status=idle</text>
+    
+    <path d="M 1045 580 L 1195 580" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="1055" y="573" font-size="9.5" font-family="Arial" text-anchor="start" fill="#7E22CE">Временные ряды TimescaleDB</text>
+    
+    <path d="M 1045 620 L 1195 620" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="1055" y="613" font-size="9.5" font-family="Arial" text-anchor="start" fill="#7E22CE">Вебхук-алерты об авариях</text>
+    
+    <path d="M 267 100 L 267 150" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="260" y="135" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Политики безопасности SSRF</text>
+    
+    <path d="M 497 100 L 497 285" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="490" y="140" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">SKIP LOCKED и buffer_unordered</text>
+    
+    <path d="M 727 100 L 727 420" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arr-black)"/>
+    <text x="720" y="140" font-size="9" font-family="Arial" text-anchor="end" fill="#000000">Пороги SLA и критерии аварий</text>
+    
+    <path d="M 957 100 L 957 555" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="950" y="140" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Спецификация OpenAPI/Swagger</text>
+    
+    <path d="M 267 745 L 267 240" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="260" y="735" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Контроллер sites и SSRF-фильтр</text>
+    
+    <path d="M 510 745 L 510 375" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="500" y="735" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Воркер Tokio и SQLx (SKIP LOCKED)</text>
+    
+    <path d="M 727 745 L 727 510" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="720" y="735" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">СУБД TimescaleDB (гипертаблица)</text>
+    
+    <path d="M 957 745 L 957 645" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="950" y="735" font-size="9" font-family="Arial" text-anchor="end" fill="#7E22CE">Шлюз BFF (NestJS) и Swagger UI</text>
+    
+</svg>

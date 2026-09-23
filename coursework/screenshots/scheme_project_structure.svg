@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 760" width="1140" height="760" style="background:#f8fafc; font-family:Arial,sans-serif;">
+  <defs>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="106%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#334155"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#9333ea"/>
+    </marker>
+  </defs>
+
+  <!-- Title Header -->
+  <rect x="30" y="20" width="1080" height="50" rx="8" fill="#1e293b" filter="url(#shadow)"/>
+  <text x="570" y="52" fill="#ffffff" font-size="18" font-weight="bold" text-anchor="middle">АРХИТЕКТУРНО-СТРУКТУРНАЯ СХЕМА МОНОРЕПОЗИТОРИЯ «UPWARD»</text>
+
+  <!-- External Clients Layer -->
+  <rect x="30" y="90" width="1080" height="75" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="50" y="115" fill="#64748b" font-size="11" font-weight="bold">ВНЕШНИЙ КЛИЕНТСКИЙ КОНТУР</text>
+  
+  <rect x="180" y="105" width="220" height="45" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="290" y="132" fill="#0f172a" font-size="13" font-weight="bold" text-anchor="middle">Web UI / Мобильные клиенты</text>
+
+  <rect x="460" y="105" width="220" height="45" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="570" y="132" fill="#0f172a" font-size="13" font-weight="bold" text-anchor="middle">Swagger UI (/docs)</text>
+
+  <rect x="740" y="105" width="220" height="45" rx="6" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="850" y="132" fill="#0f172a" font-size="13" font-weight="bold" text-anchor="middle">CI/CD &amp; Prometheus Exporter</text>
+
+  <!-- Down Arrow to Nginx -->
+  <path d="M 570 165 L 570 190" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <text x="585" y="180" fill="#2563eb" font-size="10" font-weight="bold">HTTPS / TLS 443</text>
+
+  <!-- Reverse Proxy Layer -->
+  <rect x="30" y="195" width="1080" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="50" y="220" fill="#1d4ed8" font-size="12" font-weight="bold">ВХОДНОЙ ШЛЮЗ: NGINX REVERSE PROXY &amp; L7-БАЛАНСИРОВЩИК</text>
+  <text x="50" y="245" fill="#334155" font-size="11">Функции: Терминация SSL/TLS | Защита от DoS (limit_req 10r/s) | Балансировка least_conn | Маршрутизация префиксов /api и /docs</text>
+
+  <!-- Arrows from Nginx to Microservices -->
+  <path d="M 280 270 L 280 305" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 570 270 L 570 305" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 860 270 L 860 305" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Microservices Layer -->
+  <!-- 1. BFF -->
+  <rect x="30" y="310" width="330" height="230" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="30" y="310" width="330" height="35" rx="8" fill="#0284c7"/>
+  <text x="195" y="333" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">services/bff (NestJS / TypeScript)</text>
+  <text x="45" y="365" fill="#0f172a" font-size="11" font-weight="bold">• API Gateway &amp; Агрегация:</text>
+  <text x="55" y="385" fill="#475569" font-size="11">– Преобразование DTO для фронтенда</text>
+  <text x="55" y="405" fill="#475569" font-size="11">– Кэширование публичного JWKS ключа</text>
+  <text x="55" y="425" fill="#475569" font-size="11">– Локальная валидация JWT токенов</text>
+  <text x="45" y="455" fill="#0f172a" font-size="11" font-weight="bold">• Модули:</text>
+  <text x="55" y="475" fill="#475569" font-size="11">– SitesModule, TelemetryModule, AuthModule</text>
+  <text x="55" y="495" fill="#475569" font-size="11">– NestJS Interceptors &amp; ExceptionFilters</text>
+  <text x="55" y="520" fill="#0284c7" font-size="10" font-weight="bold">Порт: 3001 (Внутренняя сеть)</text>
+
+  <!-- 2. Identify -->
+  <rect x="380" y="310" width="320" height="230" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="380" y="310" width="320" height="35" rx="8" fill="#7c3aed"/>
+  <text x="540" y="333" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">services/identify (Rust / Argon2)</text>
+  <text x="395" y="365" fill="#0f172a" font-size="11" font-weight="bold">• Аутентификация и Ключи:</text>
+  <text x="405" y="385" fill="#475569" font-size="11">– Хранение приватного ключа Ed25519</text>
+  <text x="405" y="405" fill="#475569" font-size="11">– Публичный эндпоинт /.well-known/jwks.json</text>
+  <text x="405" y="425" fill="#475569" font-size="11">– Хеширование паролей Argon2id</text>
+  <text x="395" y="455" fill="#0f172a" font-size="11" font-weight="bold">• Управление сессиями:</text>
+  <text x="405" y="475" fill="#475569" font-size="11">– Выпуск Access JWT (TTL 15m)</text>
+  <text x="405" y="495" fill="#475569" font-size="11">– Ротация Refresh токенов</text>
+  <text x="405" y="520" fill="#7c3aed" font-size="10" font-weight="bold">Порт: 8080 (Внутренняя сеть)</text>
+
+  <!-- 3. Uptime Core -->
+  <rect x="720" y="310" width="390" height="230" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="720" y="310" width="390" height="35" rx="8" fill="#059669"/>
+  <text x="915" y="333" fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle">services/uptime (Rust / Axum / Tokio)</text>
+  <text x="735" y="365" fill="#0f172a" font-size="11" font-weight="bold">• Ядро мониторинга и опросчик:</text>
+  <text x="745" y="385" fill="#475569" font-size="11">– Асинхронный воркер buffer_unordered(25)</text>
+  <text x="745" y="405" fill="#475569" font-size="11">– Атомарный захват FOR UPDATE SKIP LOCKED</text>
+  <text x="745" y="425" fill="#475569" font-size="11">– Защита от зависаний (Dead Worker Recovery)</text>
+  <text x="735" y="455" fill="#0f172a" font-size="11" font-weight="bold">• Модули безопасности и API:</text>
+  <text x="745" y="475" fill="#475569" font-size="11">– IpValidator: SSRF фильтр RFC 1918 &amp; loopback</text>
+  <text x="745" y="495" fill="#475569" font-size="11">– Верификация HTTP-01 Challenge</text>
+  <text x="745" y="520" fill="#059669" font-size="10" font-weight="bold">Кластер: 3000, 3002... (Горизонтальное масштабирование)</text>
+
+  <!-- Arrows to Storage -->
+  <path d="M 800 540 L 800 575" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 980 540 L 980 575" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 540 540 L 540 575" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Storage Layer -->
+  <rect x="30" y="580" width="1080" height="95" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="50" y="605" fill="#64748b" font-size="11" font-weight="bold">СЛОЙ ХРАНЕНИЯ ДАННЫХ И ИНФРАСТРУКТУРЫ ХРАНИЛИЩ</text>
+
+  <!-- DB 1: TimescaleDB -->
+  <rect x="50" y="615" width="480" height="50" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="65" y="635" fill="#0f172a" font-size="12" font-weight="bold">PostgreSQL 16 + TimescaleDB (Порт: 5432)</text>
+  <text x="65" y="653" fill="#475569" font-size="10.5">Гипертаблица site_pings (авто-ротация 30 дней) | Реестр sites | Таблица forbidden_ip</text>
+
+  <!-- DB 2: Redis -->
+  <rect x="550" y="615" width="300" height="50" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="565" y="635" fill="#0f172a" font-size="12" font-weight="bold">Redis In-Memory (Порт: 6379)</text>
+  <text x="565" y="653" fill="#475569" font-size="10.5">Временные токены challenge:{site_id}:{token} (TTL 24h)</text>
+
+  <!-- Orchestration / Moonrepo -->
+  <rect x="870" y="615" width="220" height="50" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="885" y="635" fill="#0f172a" font-size="12" font-weight="bold">Moonrepo &amp; devenv (Nix)</text>
+  <text x="885" y="653" fill="#475569" font-size="10.5">Кэш задач, сборка, миграции</text>
+
+  <!-- Footer Info -->
+  <text x="570" y="720" fill="#94a3b8" font-size="11" text-anchor="middle">Разработчик: Шахсинов М. В. | Курсовой проект «Upward» | АНО ПОО «КЭПиИТ», Москва, 2026</text>
+</svg>

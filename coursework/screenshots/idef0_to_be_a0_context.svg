@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 820" width="1240" height="820" style="background:#ECE9D8;">
+  <defs>
+    <marker id="arr-black" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#000000"/>
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#9333EA"/>
+    </marker>
+  </defs>
+  
+    <!-- Ramus Frame Border -->
+    <rect x="20" y="20" width="1200" height="780" fill="#FFFEEB" stroke="#000000" stroke-width="2"/>
+    
+    <!-- Top Header Table -->
+    <rect x="20" y="20" width="180" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="28" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">ИСПОЛЬЗУЕТСЯ В:</text>
+    
+    <rect x="200" y="20" width="270" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="208" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">АВТОР: <tspan font-weight="normal">Шахсинов М. В.</tspan></text>
+    <text x="208" y="54" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">ПРОЕКТ: <tspan font-weight="normal">ИС мониторинга Upward (TO-BE)</tspan></text>
+    <text x="208" y="82" font-size="9" font-family="Arial" font-weight="bold" fill="#000000">ЗАМЕЧАНИЯ: 1 2 3 4 5 6 7 8 9 10</text>
+    
+    <rect x="470" y="20" width="150" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="478" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">ДАТА: <tspan font-weight="normal">22.09.2026</tspan></text>
+    <text x="478" y="54" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">РЕВИЗИЯ: <tspan font-weight="normal">22.09.2026</tspan></text>
+    
+    <rect x="620" y="20" width="190" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="628" y="36" font-size="9" font-family="Arial" font-weight="bold" fill="#000000">■ РАЗРАБАТЫВАЕТСЯ</text>
+    <text x="628" y="50" font-size="9" font-family="Arial" fill="#000000">□ ЧЕРНОВИК</text>
+    <text x="628" y="64" font-size="9" font-family="Arial" fill="#000000">□ РЕКОМЕНДОВАНО</text>
+    <text x="628" y="78" font-size="9" font-family="Arial" fill="#000000">□ ПУБЛИКАЦИЯ</text>
+    
+    <rect x="810" y="20" width="190" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="818" y="38" font-size="10" font-family="Arial" fill="#000000">ЧИТАТЕЛЬ</text>
+    <text x="918" y="38" font-size="10" font-family="Arial" fill="#000000">ДАТА</text>
+    <line x1="810" y1="44" x2="1000" y2="44" stroke="#000000" stroke-width="0.7"/>
+    
+    <rect x="1000" y="20" width="220" height="75" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="1008" y="38" font-size="10" font-family="Arial" font-weight="bold" fill="#000000">КОНТЕКСТ:</text>
+    <text x="1110" y="64" font-size="14" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#000000">ВЕРХ</text>
+    
+    <!-- Bottom Footer Table -->
+    <rect x="20" y="760" width="200" height="40" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="30" y="785" font-size="11" font-family="Arial" font-weight="bold" fill="#000000">Ветка: А-0</text>
+    
+    <rect x="220" y="760" width="800" height="40" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="620" y="785" font-size="12" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#000000">Название: Автоматизированный мониторинг веб-ресурсов системой Upward (TO-BE)</text>
+    
+    <rect x="1020" y="760" width="200" height="40" fill="none" stroke="#000000" stroke-width="1"/>
+    <text x="1120" y="785" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#000000">Номер: 4</text>
+    
+    <rect x="410" y="330" width="400" height="150" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.8"/>
+    <line x1="410" y1="346" x2="426" y2="330" stroke="#9333EA" stroke-width="1.8"/>
+    <text x="610" y="393" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">Автоматизированный мониторинг</text><text x="610" y="409" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">доступности и телеметрии веб-ресурсов</text><text x="610" y="425" font-size="11" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#581C87">информационной системой «Upward»</text>
+    <text x="802" y="472" font-size="11" font-family="Arial" font-weight="bold" text-anchor="end" fill="#581C87">А0</text>
+    
+    <path d="M 40 370 L 410 370" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arr-black)"/>
+    <text x="50" y="360" font-size="10" font-family="Arial" text-anchor="start" fill="#000000">Конфигурации целевых веб-ресурсов</text>
+    
+    <path d="M 40 435 L 410 435" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="50" y="425" font-size="10" font-family="Arial" text-anchor="start" fill="#7E22CE">Запросы узлов через REST API / Swagger</text>
+    
+    <path d="M 510 120 L 510 330" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="500" y="200" font-size="10" font-family="Arial" text-anchor="end" fill="#7E22CE">Политики безопасности и правила SSRF</text>
+    
+    <path d="M 710 120 L 710 330" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arr-black)"/>
+    <text x="720" y="200" font-size="10" font-family="Arial" text-anchor="start" fill="#000000">Нормативы SLA и расписания фонового опроса</text>
+    
+    <path d="M 510 710 L 510 480" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arr-black)"/>
+    <text x="500" y="620" font-size="10" font-family="Arial" text-anchor="end" fill="#000000">Системный администратор и инженеры</text>
+    
+    <path d="M 710 710 L 710 480" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="720" y="620" font-size="10" font-family="Arial" text-anchor="start" fill="#7E22CE">ИС Upward (Rust worker, TimescaleDB, Redis, Nginx, BFF)</text>
+    
+    <path d="M 810 370 L 1180 370" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="825" y="360" font-size="10" font-family="Arial" text-anchor="start" fill="#7E22CE">Метрики (DNS, TLS, TTFB) в гипертаблице TimescaleDB</text>
+    
+    <path d="M 810 420 L 1180 420" fill="none" stroke="#9333EA" stroke-width="1.8" marker-end="url(#arr-purple)"/>
+    <text x="825" y="410" font-size="10" font-family="Arial" text-anchor="start" fill="#7E22CE">Мгновенные вебхук-уведомления об авариях</text>
+    
+    <path d="M 810 460 L 1180 460" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arr-black)"/>
+    <text x="825" y="450" font-size="10" font-family="Arial" text-anchor="start" fill="#000000">Аналитические отчеты об аптайме веб-ресурсов</text>
+    
+</svg>

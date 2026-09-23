@@ -3,10 +3,10 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{Router, get};
 
-use crate::AppState;
-use crate::domain::SiteId;
 use super::domain::PingRecord;
 use super::dto::GetPingsDto;
+use crate::AppState;
+use crate::domain::SiteId;
 
 #[tracing::instrument(skip(state))]
 #[utoipa::path(
@@ -45,6 +45,5 @@ pub async fn get_pings(
 }
 
 pub fn routes() -> Router<AppState> {
-    Router::new()
-        .route("/sites/{site_id}/pings", get(get_pings))
+    Router::new().route("/sites/{site_id}/pings", get(get_pings))
 }
