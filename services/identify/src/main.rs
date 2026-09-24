@@ -1,3 +1,4 @@
+mod login;
 mod openapi;
 mod server;
 

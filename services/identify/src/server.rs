@@ -5,8 +5,8 @@ use tracing::debug;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::AppState;
 use crate::openapi::ApiDoc;
+use crate::{AppState, login};
 
 /// Ответ эндпоинта проверки работоспособности сервиса
 #[derive(Serialize, utoipa::ToSchema)]
@@ -53,6 +53,7 @@ pub async fn health_check() -> (StatusCode, Json<HealthResponseDto>) {
 pub fn create_app(state: AppState) -> Router {
     Router::new()
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
+        .merge(login::controller::routes())
         .route("/health", get(health_check))
         .with_state(state)
 }
