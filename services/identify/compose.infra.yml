@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: identify-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: identify_user
+      POSTGRES_PASSWORD: identify_password
+      POSTGRES_DB: identifydb
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - identify-pgdata:/var/lib/postgresql/data
+
+volumes:
+  identify-pgdata:

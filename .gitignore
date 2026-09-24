@@ -31,3 +31,7 @@ dist-newstyle
 .DS_Store
 *.swp
 *.swo
+
+# Crypto keys
+*private*.pem
+

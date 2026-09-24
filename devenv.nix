@@ -17,6 +17,7 @@
     pkgs.dune
     pkgs.pkg-config
     pkgs.sqlx-cli
+    pkgs.openssl
   ];
 
   # https://devenv.sh/languages/

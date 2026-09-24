@@ -1,0 +1,68 @@
+language: 'rust'
+layer: 'application'
+
+env:
+  CARGO_TERM_COLOR: 'always'
+
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'Cargo.toml'
+  tests:
+    - 'tests/**/*'
+  migrations:
+    - 'migrations/**/*'
+
+tasks:
+  run:
+    command: 'cargo run'
+    inputs:
+      - '@globs(sources)'
+  gen-keys:
+    script: 'mkdir -p certs && openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out certs/private.pem && openssl rsa -in certs/private.pem -pubout -out certs/public.pem'
+    options:
+      cache: false
+  build:
+    command: 'cargo build'
+    inputs:
+      - '@globs(sources)'
+  check:
+    command: 'cargo check'
+    inputs:
+      - '@globs(sources)'
+  format:
+    command: 'cargo fmt --all --check'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  lint:
+    command: 'cargo clippy'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  test:
+    command: 'cargo test'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  migrate:
+    command: 'sqlx migrate run'
+    inputs:
+      - '@globs(migrations)'
+      - '.env'
+    options:
+      cache: false
+  migrate-run:
+    command: 'sqlx migrate run'
+    inputs:
+      - '@globs(migrations)'
+      - '.env'
+    options:
+      cache: false
+  migrate-status:
+    command: 'sqlx migrate info'
+    inputs:
+      - '@globs(migrations)'
+      - '.env'
+    options:
+      cache: false
