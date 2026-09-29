@@ -117,9 +117,9 @@ impl JwtService {
     ) -> Result<(AccessToken, RefreshToken), RefreshError> {
         let redis_key = format!("refresh:{}", old_refresh.as_str());
 
-        // 1. Проверяем токен в Redis
+        // Атомарно получаем и удаляем одноразовый токен.
         let user_id_str: Option<String> = redis
-            .get(&redis_key)
+            .get_del(&redis_key)
             .await
             .map_err(|e| RefreshError::RedisError(e.to_string()))?;
 
@@ -128,13 +128,7 @@ impl JwtService {
             .parse()
             .map_err(|_| RefreshError::InvalidOrExpiredToken)?;
 
-        // 2. Одноразовость: удаляем старый refresh токен
-        let _: () = redis
-            .del(&redis_key)
-            .await
-            .map_err(|e| RefreshError::RedisError(e.to_string()))?;
-
-        // 3. Проверяем, существует ли пользователь в БД
+        // Проверяем, существует ли пользователь в БД.
         let user = user_repo
             .find_by_id(user_id)
             .await

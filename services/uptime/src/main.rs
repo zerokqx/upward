@@ -1,3 +1,4 @@
+mod auth;
 mod blocked_ip;
 mod domain;
 mod openapi;
@@ -6,11 +7,12 @@ mod server;
 mod site;
 
 use dotenvy::dotenv;
-use reqwest::redirect;
+use jsonwebtoken::DecodingKey;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
 use tokio::time::interval;
@@ -36,32 +38,33 @@ pub struct AppState {
     pub forbidden_ip_repo: ForbiddenIpRepository,
     pub redis: redis::aio::MultiplexedConnection,
     pub challenge_repo: ChallengeRepository,
+    pub jwt_key: Arc<DecodingKey>,
 }
 
-async fn check_single_site(site: Site, validator: &IpValidator, pinger: &HttpPinger) -> PingRecord {
+async fn check_single_site(
+    site: Site,
+    validator: &IpValidator,
+    pinger: &HttpPinger,
+) -> (PingRecord, bool) {
     let site_id = site.id.expect("site id required");
 
-    if let Err(err) = validator.validate_url(site.url.as_ref()).await {
-        return PingRecord {
-            site_id,
-            duration_ms: 0.0,
-            extra: serde_json::json!({
-                "error": format!("Security validation failed: {err}")
-            }),
-        };
-    }
-
-    match pinger.ping(site.url.as_ref()).await {
-        Ok(resp) => PingRecord {
-            site_id,
-            duration_ms: resp.ping_duration.as_secs_f64() * 1000.0,
-            extra: serde_json::to_value(resp.extra).unwrap_or_default(),
-        },
-        Err(err) => PingRecord {
-            site_id,
-            duration_ms: 0.0,
-            extra: serde_json::json!({ "error": err.to_string() }),
-        },
+    match pinger.ping(site.url.as_ref(), validator).await {
+        Ok(resp) => (
+            PingRecord {
+                site_id,
+                duration_ms: resp.ping_duration.as_secs_f64() * 1000.0,
+                extra: serde_json::to_value(resp.extra).unwrap_or_default(),
+            },
+            false,
+        ),
+        Err(err) => (
+            PingRecord {
+                site_id,
+                duration_ms: 0.0,
+                extra: serde_json::json!({ "error": err.to_string() }),
+            },
+            true,
+        ),
     }
 }
 
@@ -110,7 +113,7 @@ async fn process_batch(
 
     info!("Fetched {} sites for ping...", sites.len());
 
-    let results: Vec<PingRecord> = stream::iter(sites)
+    let outcomes: Vec<(PingRecord, bool)> = stream::iter(sites)
         .map(|site| {
             let pinger = pinger.clone();
             let validator = validator.clone();
@@ -119,12 +122,23 @@ async fn process_batch(
         .buffer_unordered(config.concurrency)
         .collect()
         .await;
+    let failed_ids: Vec<SiteId> = outcomes
+        .iter()
+        .filter_map(|(record, failed)| failed.then_some(record.site_id))
+        .collect();
+    let results: Vec<PingRecord> = outcomes.into_iter().map(|(record, _)| record).collect();
 
     info!("Pings completed, saving {} results...", results.len());
     if let Err(err) = state.ping_repo.save_pings_batch(&results).await {
         error!("Error saving batch pings: {err}");
     } else {
         info!("Successfully saved batch of {} pings", results.len());
+    }
+
+    for site_id in failed_ids {
+        if let Err(err) = state.site_repo.deactivate_site(site_id).await {
+            error!("Error deactivating site {}: {err}", site_id);
+        }
     }
 
     let site_ids: Vec<SiteId> = results.iter().map(|r| r.site_id).collect();
@@ -140,13 +154,7 @@ fn spawn_uptime_worker(state: AppState, config: WorkerConfig) -> JoinHandle<()> 
             config.batch_size, config.concurrency
         );
         let mut ticker = interval(Duration::from_secs(10));
-        let client = reqwest::ClientBuilder::new()
-            .user_agent("UptimeMonitor/1.0")
-            .redirect(redirect::Policy::none())
-            .timeout(Duration::from_secs(10))
-            .build()
-            .unwrap();
-        let pinger = HttpPinger::new(&client);
+        let pinger = HttpPinger::new();
         let validator = IpValidator::new(state.forbidden_ip_repo.clone());
 
         loop {
@@ -181,6 +189,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let redis_client = redis::Client::open(redis_url)?;
     let redis_conn = redis_client.get_multiplexed_async_connection().await?;
     let challenge_repo = ChallengeRepository::new(redis_conn.clone());
+    let public_key_path = env::var("JWT_PUBLIC_KEY_PATH")
+        .unwrap_or_else(|_| "../identify/certs/public.pem".to_string());
+    let public_key = std::fs::read(public_key_path)?;
+    let jwt_key = Arc::new(DecodingKey::from_rsa_pem(&public_key)?);
 
     let state = AppState {
         pool: pool.clone(),
@@ -189,6 +201,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ping_repo: PingRepository::new(pool.clone()),
         redis: redis_conn,
         challenge_repo,
+        jwt_key,
     };
 
     let worker_config = WorkerConfig::from_env();

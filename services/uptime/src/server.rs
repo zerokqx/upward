@@ -1,3 +1,4 @@
+use axum::middleware;
 use axum::{Json, Router, http::StatusCode, routing::get};
 use serde::Serialize;
 use std::net::SocketAddr;
@@ -51,11 +52,17 @@ pub async fn health_check() -> (StatusCode, Json<HealthResponseDto>) {
 
 /// Создание экземпляра Axum приложения со всеми подключенными роутами и состоянием
 pub fn create_app(state: AppState) -> Router {
+    let protected =
+        site::routes()
+            .merge(ping::routes())
+            .route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                crate::auth::require_auth,
+            ));
     Router::new()
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
         .route("/health", get(health_check))
-        .merge(site::routes())
-        .merge(ping::routes())
+        .merge(protected)
         .with_state(state)
 }
 

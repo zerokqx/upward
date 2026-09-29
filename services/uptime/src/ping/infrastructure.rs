@@ -1,36 +1,26 @@
-use serde::Deserialize;
-use std::collections::HashMap;
-use std::time::Instant;
-
 use super::domain::{PingError, PingExecution};
-
-#[derive(Deserialize)]
-struct RawPingResponse {
-    #[serde(flatten)]
-    extra: HashMap<String, serde_json::Value>,
-}
+use crate::site::controller::IpValidator;
+use crate::site::infrastructure::probe_upward;
+use std::time::Duration;
 
 #[derive(Clone)]
-pub struct HttpPinger {
-    client: reqwest::Client,
-}
+pub struct HttpPinger {}
 
 impl HttpPinger {
-    pub fn new(client: &reqwest::Client) -> Self {
-        Self {
-            client: client.clone(),
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 
-    pub async fn ping(&self, url: &str) -> Result<PingExecution, PingError> {
-        let start = Instant::now();
-        let result = self.client.get(url).send().await?.text().await?;
-        let ping_duration = start.elapsed();
-        let parsed_result = serde_json::from_str::<RawPingResponse>(&result)?;
+    pub async fn ping(
+        &self,
+        url: &str,
+        validator: &IpValidator,
+    ) -> Result<PingExecution, PingError> {
+        let (extra, ping_duration) = probe_upward(url, validator, Duration::from_secs(10)).await?;
 
         Ok(PingExecution {
             ping_duration,
-            extra: parsed_result.extra,
+            extra,
         })
     }
 }

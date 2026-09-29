@@ -1,10 +1,10 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 use crate::AppState;
 use crate::blocked_ip::ForbiddenIpRepository;
 use crate::domain::{SiteId, UserId};
 use axum::Json;
-use axum::extract::{Path, State};
+use axum::extract::{Extension, Path, State};
 use axum::http::StatusCode;
 use axum::routing::{Router, get, post};
 use reqwest::Url;
@@ -16,7 +16,6 @@ use super::dto::{CreateSiteDto, CreateSiteResponseDto, SiteResponseDto, VerifySi
 #[derive(Clone)]
 pub struct IpValidator {
     forbidden_ip_repo: ForbiddenIpRepository,
-    allow_private_ips: bool,
 }
 
 #[derive(Debug, thiserror::Error, Eq, PartialEq)]
@@ -37,6 +36,10 @@ pub enum UrlValidationError {
     UnsupportedScheme,
     #[error("Missing host in URL")]
     MissingHost,
+    #[error("URL must not contain credentials")]
+    Credentials,
+    #[error("DNS returned no addresses")]
+    NoAddresses,
     #[error("Cannot resolve host: {0}")]
     DnsError(String),
     #[error("IP is in forbidden list")]
@@ -59,20 +62,7 @@ impl From<IpValidationError> for UrlValidationError {
 
 impl IpValidator {
     pub fn new(forbidden_ip_repo: ForbiddenIpRepository) -> Self {
-        let allow_private_ips = std::env::var("ALLOW_PRIVATE_IPS")
-            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
-            .unwrap_or(false);
-
-        Self {
-            forbidden_ip_repo,
-            allow_private_ips,
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn with_allow_private_ips(mut self, allow: bool) -> Self {
-        self.allow_private_ips = allow;
-        self
+        Self { forbidden_ip_repo }
     }
 
     pub async fn validate(&self, ip: IpAddr) -> Result<(), IpValidationError> {
@@ -80,7 +70,7 @@ impl IpValidator {
             IpAddr::V4(v4) => Self::is_forbidden_ipv4(v4),
             IpAddr::V6(v6) => Self::is_forbidden_ipv6(v6),
         };
-        if is_private && !self.allow_private_ips {
+        if is_private {
             return Err(IpValidationError::IpInvalid);
         }
 
@@ -98,19 +88,30 @@ impl IpValidator {
     }
 
     pub async fn validate_url(&self, raw_url: &str) -> Result<(), UrlValidationError> {
+        self.resolve_url(raw_url).await.map(|_| ())
+    }
+
+    pub async fn resolve_url(&self, raw_url: &str) -> Result<Vec<SocketAddr>, UrlValidationError> {
         let url = Url::parse(raw_url).map_err(|e| UrlValidationError::InvalidUrl(e.to_string()))?;
 
         if url.scheme() != "https" && url.scheme() != "http" {
             return Err(UrlValidationError::UnsupportedScheme);
+        }
+        if !url.username().is_empty() || url.password().is_some() {
+            return Err(UrlValidationError::Credentials);
         }
 
         let host = url.host_str().ok_or(UrlValidationError::MissingHost)?;
         let port = url.port_or_known_default().unwrap_or(80);
 
         // 1. Если хост уже является IP-адресом
-        if let Ok(ip) = host.parse::<IpAddr>() {
+        if let Ok(ip) = host
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .parse::<IpAddr>()
+        {
             self.validate(ip).await?;
-            return Ok(());
+            return Ok(vec![SocketAddr::new(ip, port)]);
         }
 
         // 2. Если хост — домен, резолвим все целевые адреса через DNS
@@ -118,11 +119,15 @@ impl IpValidator {
             .await
             .map_err(|e| UrlValidationError::DnsError(e.to_string()))?;
 
+        let mut validated = Vec::new();
         for socket_addr in addrs {
             self.validate(socket_addr.ip()).await?;
+            validated.push(socket_addr);
         }
-
-        Ok(())
+        if validated.is_empty() {
+            return Err(UrlValidationError::NoAddresses);
+        }
+        Ok(validated)
     }
 
     pub fn is_forbidden_ipv4(ip: Ipv4Addr) -> bool {
@@ -157,6 +162,13 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
             "Only http and https schemes are allowed".into(),
         ),
         UrlValidationError::MissingHost => (StatusCode::BAD_REQUEST, "Missing host in URL".into()),
+        UrlValidationError::Credentials => (
+            StatusCode::BAD_REQUEST,
+            "URL credentials are not allowed".into(),
+        ),
+        UrlValidationError::NoAddresses => {
+            (StatusCode::BAD_REQUEST, "DNS returned no addresses".into())
+        }
         UrlValidationError::DnsError(e) => {
             (StatusCode::BAD_REQUEST, format!("Cannot resolve host: {e}"))
         }
@@ -199,7 +211,7 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
                 "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
                 "status": "pending_verification",
                 "challenge_token": "b428d082-356a-4b92-808c-901a1e582845",
-                "challenge_path": "/.well-known/upward"
+                "challenge_path": "/upward"
             })
         ),
         (
@@ -224,8 +236,12 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
 )]
 pub async fn create_site(
     State(state): State<AppState>,
+    Extension(owner): Extension<UserId>,
     Json(body): Json<CreateSiteDto>,
 ) -> Result<(StatusCode, Json<CreateSiteResponseDto>), (StatusCode, String)> {
+    if body.user_id != owner {
+        return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
+    }
     let validator = IpValidator::new(state.forbidden_ip_repo);
     validator
         .validate_url(body.site.as_ref())
@@ -257,7 +273,7 @@ pub async fn create_site(
             id: site_id,
             status: "pending_verification",
             challenge_token,
-            challenge_path: "/.well-known/upward",
+            challenge_path: "/upward",
         }),
     ))
 }
@@ -304,8 +320,12 @@ pub async fn create_site(
 )]
 pub async fn get_all_sites(
     State(state): State<AppState>,
+    Extension(owner): Extension<UserId>,
     Path(user_id): Path<UserId>,
 ) -> Result<Json<Vec<SiteResponseDto>>, (StatusCode, String)> {
+    if user_id != owner {
+        return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
+    }
     let sites = state
         .site_repo
         .get_all_sites_for_user(&user_id)
@@ -317,8 +337,8 @@ pub async fn get_all_sites(
 
 /// Подтвердить владение сайтом через HTTP-01 Challenge
 ///
-/// Обращается по адресу {site.url}/.well-known/upward и сравнивает полученный токен
-/// с ожидаемым токеном из Redis. При совпадении активирует сайт (active = true).
+/// Обращается по адресу {site.url}/upward. Ответ должен быть JSON-объектом
+/// с полем `challenge_token`, совпадающим с ожидаемым токеном из Redis.
 #[tracing::instrument(skip(state))]
 #[utoipa::path(
     post,
@@ -356,6 +376,7 @@ pub async fn get_all_sites(
 )]
 pub async fn verify_site(
     State(state): State<AppState>,
+    Extension(owner): Extension<UserId>,
     Path(site_id): Path<SiteId>,
 ) -> Result<Json<VerifySiteResponseDto>, (StatusCode, String)> {
     let site = state
@@ -364,6 +385,9 @@ pub async fn verify_site(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or_else(|| (StatusCode::NOT_FOUND, "Site not found".into()))?;
+    if site.user_id != owner {
+        return Err((StatusCode::NOT_FOUND, "Site not found".into()));
+    }
 
     if site.active {
         return Ok(Json(VerifySiteResponseDto {
@@ -372,43 +396,28 @@ pub async fn verify_site(
         }));
     }
 
-    let mut verify_url = Url::parse(site.url.as_ref())
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid site URL: {e}")))?;
-    verify_url.set_path("/.well-known/upward");
-
-    // Защита от SSRF и DNS Rebinding перед запросом
     let validator = IpValidator::new(state.forbidden_ip_repo);
-    validator
-        .validate_url(verify_url.as_str())
-        .await
-        .map_err(map_url_validation_error_to_response)?;
-
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(5))
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let resp = client.get(verify_url.as_str()).send().await.map_err(|e| {
+    let (response, _) = super::infrastructure::probe_upward(
+        site.url.as_ref(),
+        &validator,
+        std::time::Duration::from_secs(5),
+    )
+    .await
+    .map_err(|err| {
         (
             StatusCode::BAD_GATEWAY,
-            format!("Failed to reach challenge URL: {e}"),
+            format!("/upward probe failed: {err}"),
         )
     })?;
-
-    if !resp.status().is_success() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!("Challenge URL returned HTTP status {}", resp.status()),
-        ));
-    }
-
-    let returned_token = resp.text().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to read response from challenge URL: {e}"),
-        )
-    })?;
+    let returned_token = response
+        .get("challenge_token")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "JSON response must contain challenge_token".into(),
+            )
+        })?;
 
     let is_valid = state
         .challenge_repo
@@ -440,11 +449,43 @@ pub async fn verify_site(
     }))
 }
 
+/// Выдать новый challenge для повторного подтверждения отключённого сайта.
+pub async fn reissue_challenge(
+    State(state): State<AppState>,
+    Extension(owner): Extension<UserId>,
+    Path(site_id): Path<SiteId>,
+) -> Result<Json<CreateSiteResponseDto>, (StatusCode, String)> {
+    let site = state
+        .site_repo
+        .get_site_by_id(site_id)
+        .await
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "Site not found".into()))?;
+    if site.user_id != owner {
+        return Err((StatusCode::NOT_FOUND, "Site not found".into()));
+    }
+    if site.active {
+        return Err((StatusCode::CONFLICT, "Site is active".into()));
+    }
+    let challenge_token = state
+        .challenge_repo
+        .new_challenge(site_id)
+        .await
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+    Ok(Json(CreateSiteResponseDto {
+        id: site_id,
+        status: "pending_verification",
+        challenge_token,
+        challenge_path: "/upward",
+    }))
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/sites/{user_id}", get(get_all_sites))
         .route("/sites", post(create_site))
         .route("/sites/{site_id}/verify", post(verify_site))
+        .route("/sites/{site_id}/challenge", post(reissue_challenge))
 }
 #[cfg(test)]
 mod tests {
@@ -471,7 +512,7 @@ mod tests {
         let blocked_ip: IpAddr = "93.184.216.34".parse().unwrap();
         repo.block_ip(blocked_ip).await.unwrap();
 
-        let validator = IpValidator::new(repo.clone()).with_allow_private_ips(false);
+        let validator = IpValidator::new(repo.clone());
 
         // 1. Локальный IP -> IpInvalid
         assert_eq!(
@@ -500,17 +541,12 @@ mod tests {
             Err(UrlValidationError::UnsupportedScheme)
         );
 
-        // 6. Режим разработки с allow_private_ips -> Ok
-        let dev_validator = IpValidator::new(repo).with_allow_private_ips(true);
+        // 6. Локальный адрес нельзя разрешить через URL и в рабочей конфигурации.
         assert_eq!(
-            dev_validator.validate("127.0.0.1".parse().unwrap()).await,
-            Ok(())
-        );
-        assert_eq!(
-            dev_validator
-                .validate_url("http://127.0.0.1:8080/test")
+            IpValidator::new(repo)
+                .resolve_url("http://127.0.0.1:8080/upward")
                 .await,
-            Ok(())
+            Err(UrlValidationError::IpInvalid)
         );
     }
 }

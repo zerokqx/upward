@@ -1,12 +1,12 @@
 use axum::Json;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Extension, Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{Router, get};
 
 use super::domain::PingRecord;
 use super::dto::GetPingsDto;
 use crate::AppState;
-use crate::domain::SiteId;
+use crate::domain::{SiteId, UserId};
 
 #[tracing::instrument(skip(state))]
 #[utoipa::path(
@@ -32,9 +32,13 @@ use crate::domain::SiteId;
 )]
 pub async fn get_pings(
     State(state): State<AppState>,
+    Extension(owner): Extension<UserId>,
     Path(site_id): Path<SiteId>,
     Query(query): Query<GetPingsDto>,
 ) -> Result<Json<Vec<PingRecord>>, (StatusCode, String)> {
+    if query.user_id != owner {
+        return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
+    }
     let pings = state
         .ping_repo
         .get_pings(&query.user_id, &site_id)

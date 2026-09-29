@@ -30,7 +30,7 @@ pub struct CreateSiteResponseDto {
     pub challenge_token: String,
 
     /// Путь, по которому должен быть доступен токен
-    #[schema(example = "/.well-known/upward")]
+    #[schema(example = "/upward")]
     pub challenge_path: &'static str,
 }
 

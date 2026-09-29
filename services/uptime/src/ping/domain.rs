@@ -6,11 +6,8 @@ use crate::domain::SiteId;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PingError {
-    #[error("Network Error: {0}")]
-    Network(#[from] reqwest::Error),
-
-    #[error("Response from site parse error: {0}")]
-    InvalidJsonParse(#[from] serde_json::Error),
+    #[error("Probe failed: {0}")]
+    Probe(#[from] crate::site::infrastructure::ProbeError),
 }
 
 /// Результат единичного сетевого замера доступности

@@ -214,6 +214,16 @@ impl SiteRepository {
 
         Ok(res.rows_affected() > 0)
     }
+
+    pub async fn deactivate_site(&self, site_id: SiteId) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "UPDATE sites SET active = FALSE, status = 'idle', status_updated_at = NOW() WHERE id = $1",
+            site_id.0
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
 
 #[derive(Clone)]
@@ -241,10 +251,7 @@ impl ChallengeRepository {
     ) -> Result<bool, redis::RedisError> {
         let mut conn = self.redis.clone();
         let key = format!("challenge:{}:{}", site_id, token);
-        let exists: bool = conn.exists(&key).await?;
-        if exists {
-            let _: () = conn.del(&key).await?;
-        }
-        Ok(exists)
+        let value: Option<i32> = conn.get_del(&key).await?;
+        Ok(value.is_some())
     }
 }
