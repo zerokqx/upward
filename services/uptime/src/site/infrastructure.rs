@@ -1,12 +1,21 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
+use bytes::BytesMut;
+use futures::StreamExt;
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
 
 use super::controller::{IpValidator, UrlValidationError};
 
-pub const MAX_RESPONSE_BYTES: usize = 64 * 1024;
+pub const DEFAULT_MAX_PAYLOAD_BYTES: usize = 512 * 1024; // 512 KB
+
+pub fn get_max_payload_bytes() -> usize {
+    std::env::var("MAX_PAYLOAD_BYTES")
+        .ok()
+        .and_then(|val| val.parse::<usize>().ok())
+        .unwrap_or(DEFAULT_MAX_PAYLOAD_BYTES)
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProbeError {
@@ -18,8 +27,8 @@ pub enum ProbeError {
     Status(StatusCode),
     #[error("Expected application/json response")]
     ContentType,
-    #[error("Response exceeds {MAX_RESPONSE_BYTES} bytes")]
-    TooLarge,
+    #[error("Response exceeds maximum allowed size of {max_bytes} bytes")]
+    PayloadTooLarge { max_bytes: usize },
     #[error("Response must be a JSON object")]
     InvalidJson,
 }
@@ -47,25 +56,40 @@ pub async fn fetch_limited(
         .resolve_to_addrs(host, &addresses)
         .build()?;
     let started = Instant::now();
-    let mut response = client.get(url.clone()).send().await?;
+    let response = client.get(url.clone()).send().await?;
     if !response.status().is_success() {
         return Err(ProbeError::Status(response.status()));
     }
+
+    let max_payload_bytes = get_max_payload_bytes();
+
+    // Быстрый отсев по Content-Length (если заголовок прислан)
     if response
         .content_length()
-        .is_some_and(|len| len > MAX_RESPONSE_BYTES as u64)
+        .is_some_and(|len| len as usize > max_payload_bytes)
     {
-        return Err(ProbeError::TooLarge);
+        return Err(ProbeError::PayloadTooLarge {
+            max_bytes: max_payload_bytes,
+        });
     }
+
     let headers = response.headers().clone();
-    let mut body = Vec::new();
-    while let Some(chunk) = response.chunk().await? {
-        if body.len().saturating_add(chunk.len()) > MAX_RESPONSE_BYTES {
-            return Err(ProbeError::TooLarge);
+
+    // Защита на случай, если Content-Length не прислали или соврали (Transfer-Encoding: chunked)
+    let mut stream = response.bytes_stream();
+    let mut body = BytesMut::new();
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        if body.len().saturating_add(chunk.len()) > max_payload_bytes {
+            return Err(ProbeError::PayloadTooLarge {
+                max_bytes: max_payload_bytes,
+            });
         }
         body.extend_from_slice(&chunk);
     }
-    Ok((headers, body, started.elapsed()))
+
+    Ok((headers, body.to_vec(), started.elapsed()))
 }
 
 pub async fn probe_upward(
@@ -86,4 +110,34 @@ pub async fn probe_upward(
     let value: Value = serde_json::from_slice(&body).map_err(|_| ProbeError::InvalidJson)?;
     let object = value.as_object().ok_or(ProbeError::InvalidJson)?;
     Ok((object.clone().into_iter().collect(), duration))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_max_payload_bytes() {
+        assert_eq!(DEFAULT_MAX_PAYLOAD_BYTES, 512 * 1024);
+    }
+
+    #[test]
+    fn test_payload_size_limit_stream_logic() {
+        let max_bytes = 100;
+        let mut body = BytesMut::new();
+        let chunk1 = vec![0u8; 60];
+        let chunk2 = vec![0u8; 40];
+        let chunk3 = vec![0u8; 1];
+
+        // chunk 1: 60 <= 100 -> ok
+        assert!(body.len() + chunk1.len() <= max_bytes);
+        body.extend_from_slice(&chunk1);
+
+        // chunk 2: 60 + 40 == 100 -> ok (equal is allowed)
+        assert!(body.len() + chunk2.len() <= max_bytes);
+        body.extend_from_slice(&chunk2);
+
+        // chunk 3: 100 + 1 == 101 > 100 -> too large
+        assert!(body.len() + chunk3.len() > max_bytes);
+    }
 }
