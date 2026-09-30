@@ -47,11 +47,15 @@ describe('AuthController', () => {
   describe('register', () => {
     it('should call authService.register with dto', async () => {
       const dto = { email: 'test@example.com', password: 'Password123!' };
-      authService.register.mockResolvedValue({ message: 'Пользователь успешно зарегистрирован' });
+      authService.register.mockResolvedValue({
+        message: 'Пользователь успешно зарегистрирован',
+      });
 
       const result = await controller.register(dto);
       expect(authService.register).toHaveBeenCalledWith(dto);
-      expect(result).toEqual({ message: 'Пользователь успешно зарегистрирован' });
+      expect(result).toEqual({
+        message: 'Пользователь успешно зарегистрирован',
+      });
     });
   });
 
@@ -70,7 +74,10 @@ describe('AuthController', () => {
   describe('refresh', () => {
     it('should call authService.refresh with refresh token', async () => {
       const dto = { refresh: 'b428d082-356a-4b92-808c-901a1e582845' };
-      const tokens = { access: 'new-jwt-access-token', refresh: 'new-refresh-uuid' };
+      const tokens = {
+        access: 'new-jwt-access-token',
+        refresh: 'new-refresh-uuid',
+      };
       authService.refresh.mockResolvedValue(tokens);
 
       const result = await controller.refresh(dto);

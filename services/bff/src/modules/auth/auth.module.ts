@@ -10,10 +10,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { GoogleAuthGuard } from './guards/google-auth.guard.js';
 
 @Module({
-  imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    ConfigModule,
-  ],
+  imports: [PassportModule.register({ defaultStrategy: 'jwt' }), ConfigModule],
   controllers: [AuthController],
   providers: [
     AuthService,

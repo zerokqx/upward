@@ -33,10 +33,18 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Регистрация нового пользователя по email и паролю' })
-  @ApiResponse({ status: 201, description: 'Пользователь успешно зарегистрирован' })
+  @ApiOperation({
+    summary: 'Регистрация нового пользователя по email и паролю',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Пользователь успешно зарегистрирован',
+  })
   @ApiResponse({ status: 400, description: 'Невалидные входные данные' })
-  @ApiResponse({ status: 409, description: 'Пользователь с таким email уже существует' })
+  @ApiResponse({
+    status: 409,
+    description: 'Пользователь с таким email уже существует',
+  })
   async register(@Body() dto: RegisterDto) {
     return await this.authService.register(dto);
   }
@@ -44,7 +52,10 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Аутентификация по email и паролю' })
-  @ApiResponse({ status: 200, description: 'Успешная аутентификация, возвращены Access и Refresh токены' })
+  @ApiResponse({
+    status: 200,
+    description: 'Успешная аутентификация, возвращены Access и Refresh токены',
+  })
   @ApiResponse({ status: 400, description: 'Невалидные учетные данные' })
   @ApiResponse({ status: 401, description: 'Неверный пароль' })
   @ApiResponse({ status: 404, description: 'Пользователь не найден' })
@@ -54,9 +65,14 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Обновление пары токенов по Refresh токену (Token Rotation)' })
+  @ApiOperation({
+    summary: 'Обновление пары токенов по Refresh токену (Token Rotation)',
+  })
   @ApiResponse({ status: 200, description: 'Токены успешно обновлены' })
-  @ApiResponse({ status: 401, description: 'Невалидный или протухший Refresh токен' })
+  @ApiResponse({
+    status: 401,
+    description: 'Невалидный или протухший Refresh токен',
+  })
   async refresh(@Body() dto: RefreshDto) {
     return await this.authService.refresh(dto);
   }
@@ -64,7 +80,10 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Инициация входа через Google OAuth' })
-  @ApiResponse({ status: 302, description: 'Редирект на страницу согласия Google' })
+  @ApiResponse({
+    status: 302,
+    description: 'Редирект на страницу согласия Google',
+  })
   googleLogin() {
     // Guard автоматически осуществляет редирект на форму входа Google
   }
@@ -72,7 +91,10 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'OAuth Callback для завершения входа через Google' })
-  @ApiResponse({ status: 200, description: 'Успешная аутентификация через Google' })
+  @ApiResponse({
+    status: 200,
+    description: 'Успешная аутентификация через Google',
+  })
   googleCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as GoogleUser;
     // Возвращаем профиль полученного через Google пользователя
@@ -85,7 +107,9 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Получение профиля текущего авторизованного пользователя' })
+  @ApiOperation({
+    summary: 'Получение профиля текущего авторизованного пользователя',
+  })
   @ApiResponse({ status: 200, description: 'Данные текущего пользователя' })
   @ApiResponse({ status: 401, description: 'Пользователь не авторизован' })
   getProfile(@CurrentUser() user: AuthenticatedUser) {

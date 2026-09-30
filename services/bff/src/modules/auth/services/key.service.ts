@@ -29,7 +29,9 @@ export class KeyService {
 
   private async fetchKey(): Promise<string> {
     try {
-      this.logger.log('Запрос открытого ключа (RSA Public Key) из identify-service...');
+      this.logger.log(
+        'Запрос открытого ключа (RSA Public Key) из identify-service...',
+      );
       const auth = getAuth();
       const response = await auth.getPublicKey();
 
@@ -41,7 +43,10 @@ export class KeyService {
       this.logger.log('Открытый ключ успешно получен и сохранён в кэш');
       return this.cachedKey;
     } catch (error) {
-      this.logger.error('Не удалось получить открытый ключ от identify-service', error);
+      this.logger.error(
+        'Не удалось получить открытый ключ от identify-service',
+        error,
+      );
       throw error;
     }
   }

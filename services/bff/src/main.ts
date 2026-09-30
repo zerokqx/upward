@@ -36,8 +36,14 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
-  Logger.log(`Upward BFF service is running on http://127.0.0.1:${port}`, 'Bootstrap');
-  Logger.log(`Swagger documentation available at http://127.0.0.1:${port}/docs`, 'Bootstrap');
+  Logger.log(
+    `Upward BFF service is running on http://127.0.0.1:${port}`,
+    'Bootstrap',
+  );
+  Logger.log(
+    `Swagger documentation available at http://127.0.0.1:${port}/docs`,
+    'Bootstrap',
+  );
 }
 
 await bootstrap();

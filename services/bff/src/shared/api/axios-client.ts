@@ -1,4 +1,8 @@
-import axios, { type AxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
+import axios, {
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type AxiosError,
+} from 'axios';
 
 export const AXIOS_INSTANCE = axios.create();
 

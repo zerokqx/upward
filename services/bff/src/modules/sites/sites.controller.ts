@@ -32,9 +32,15 @@ export class SitesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Регистрация нового сайта для мониторинга' })
   @ApiResponse({ status: 201, description: 'Сайт успешно зарегистрирован' })
-  @ApiResponse({ status: 400, description: 'Невалидный URL или ошибка DNS-резолвинга' })
+  @ApiResponse({
+    status: 400,
+    description: 'Невалидный URL или ошибка DNS-резолвинга',
+  })
   @ApiResponse({ status: 401, description: 'Пользователь не авторизован' })
-  @ApiResponse({ status: 403, description: 'Запрещено: IP является приватным или заблокирован' })
+  @ApiResponse({
+    status: 403,
+    description: 'Запрещено: IP является приватным или заблокирован',
+  })
   async createSite(
     @CurrentUser() user: AuthenticatedUser,
     @RawToken() rawToken: string,
@@ -45,7 +51,9 @@ export class SitesController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Получить список отслеживаемых сайтов текущего пользователя' })
+  @ApiOperation({
+    summary: 'Получить список отслеживаемых сайтов текущего пользователя',
+  })
   @ApiResponse({ status: 200, description: 'Список сайтов пользователя' })
   @ApiResponse({ status: 401, description: 'Пользователь не авторизован' })
   async getAllSites(
@@ -57,23 +65,31 @@ export class SitesController {
 
   @Post(':id/verify')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Подтвердить владение сайтом через HTTP-01 Challenge' })
-  @ApiResponse({ status: 200, description: 'Владение сайтом успешно подтверждено' })
-  @ApiResponse({ status: 400, description: 'Токен не совпадает или некорректный ответ сайта' })
+  @ApiOperation({
+    summary: 'Подтвердить владение сайтом через HTTP-01 Challenge',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Владение сайтом успешно подтверждено',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Токен не совпадает или некорректный ответ сайта',
+  })
   @ApiResponse({ status: 401, description: 'Пользователь не авторизован' })
   @ApiResponse({ status: 404, description: 'Сайт не найден' })
   @ApiResponse({ status: 502, description: 'Ошибка связи с целевым сайтом' })
-  async verifySite(
-    @Param('id') id: string,
-    @RawToken() rawToken: string,
-  ) {
+  async verifySite(@Param('id') id: string, @RawToken() rawToken: string) {
     return await this.sitesService.verifySite(id, rawToken);
   }
 
   @Get(':id/pings')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'История замеров доступности сайта' })
-  @ApiResponse({ status: 200, description: 'История замеров доступности за последние 30 дней' })
+  @ApiResponse({
+    status: 200,
+    description: 'История замеров доступности за последние 30 дней',
+  })
   @ApiResponse({ status: 401, description: 'Пользователь не авторизован' })
   @ApiResponse({ status: 404, description: 'Сайт не найден' })
   async getPings(

@@ -17,85 +17,116 @@ import type {
   LoginByPasswordResponseDto,
   PublicKeyResponseDto,
   RefreshRequestDto,
-  RegisterRequestDto
+  RegisterRequestDto,
 } from '../identify-service.schemas.js';
 
 import { customInstance } from '../../../axios-client.js';
 import type { BodyType } from '../../../axios-client.js';
 
-
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-  export const getAuth = () => {
-/**
- * @summary Получение открытого ключа (RSA Public Key) для локальной верификации JWT в микросервисах
- */
-const getPublicKey = (
-
- options?: SecondParameter<typeof customInstance<PublicKeyResponseDto>>,) => {
-      return customInstance<PublicKeyResponseDto>(
-      {url: `http://127.0.0.1:3001/keys/public`, method: 'GET'
-    },
-      options);
-    }
+export const getAuth = () => {
   /**
- * @summary Получение открытого ключа (RSA Public Key) напрямую в формате raw PEM
- */
-const getPublicKeyRaw = (
-
- options?: SecondParameter<typeof customInstance<unknown>>,) => {
-      return customInstance<unknown>(
-      {url: `http://127.0.0.1:3001/keys/public.pem`, method: 'GET'
-    },
-      options);
-    }
+   * @summary Получение открытого ключа (RSA Public Key) для локальной верификации JWT в микросервисах
+   */
+  const getPublicKey = (
+    options?: SecondParameter<typeof customInstance<PublicKeyResponseDto>>,
+  ) => {
+    return customInstance<PublicKeyResponseDto>(
+      { url: `http://127.0.0.1:3001/keys/public`, method: 'GET' },
+      options,
+    );
+  };
   /**
- * Проверяет учетные данные пользователя (email и пароль), сверяет хеш Argon2
- * и при успехе возвращает пару Access (JWT) и Refresh токенов.
- * @summary Аутентификация по email и паролю
- */
-const loginByPassword = (
+   * @summary Получение открытого ключа (RSA Public Key) напрямую в формате raw PEM
+   */
+  const getPublicKeyRaw = (
+    options?: SecondParameter<typeof customInstance<unknown>>,
+  ) => {
+    return customInstance<unknown>(
+      { url: `http://127.0.0.1:3001/keys/public.pem`, method: 'GET' },
+      options,
+    );
+  };
+  /**
+   * Проверяет учетные данные пользователя (email и пароль), сверяет хеш Argon2
+   * и при успехе возвращает пару Access (JWT) и Refresh токенов.
+   * @summary Аутентификация по email и паролю
+   */
+  const loginByPassword = (
     loginByPasswordRequestDto: BodyType<LoginByPasswordRequestDto>,
- options?: SecondParameter<typeof customInstance<LoginByPasswordResponseDto>>,) => {
-      return customInstance<LoginByPasswordResponseDto>(
-      {url: `http://127.0.0.1:3001/login/password`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: loginByPasswordRequestDto
-    },
-      options);
-    }
+    options?: SecondParameter<
+      typeof customInstance<LoginByPasswordResponseDto>
+    >,
+  ) => {
+    return customInstance<LoginByPasswordResponseDto>(
+      {
+        url: `http://127.0.0.1:3001/login/password`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: loginByPasswordRequestDto,
+      },
+      options,
+    );
+  };
   /**
- * Принимает текущий Refresh токен, проверяет его наличие в Redis,
- * сжигает использованный токен и выпускает новую пару (Access + Refresh).
- * @summary Обновление пары токенов (Refresh Token Rotation)
- */
-const refresh = (
+   * Принимает текущий Refresh токен, проверяет его наличие в Redis,
+   * сжигает использованный токен и выпускает новую пару (Access + Refresh).
+   * @summary Обновление пары токенов (Refresh Token Rotation)
+   */
+  const refresh = (
     refreshRequestDto: BodyType<RefreshRequestDto>,
- options?: SecondParameter<typeof customInstance<LoginByPasswordResponseDto>>,) => {
-      return customInstance<LoginByPasswordResponseDto>(
-      {url: `http://127.0.0.1:3001/refresh`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: refreshRequestDto
-    },
-      options);
-    }
+    options?: SecondParameter<
+      typeof customInstance<LoginByPasswordResponseDto>
+    >,
+  ) => {
+    return customInstance<LoginByPasswordResponseDto>(
+      {
+        url: `http://127.0.0.1:3001/refresh`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: refreshRequestDto,
+      },
+      options,
+    );
+  };
   /**
- * @summary Регистрация нового пользователя по email и паролю
- */
-const registerByPassword = (
+   * @summary Регистрация нового пользователя по email и паролю
+   */
+  const registerByPassword = (
     registerRequestDto: BodyType<RegisterRequestDto>,
- options?: SecondParameter<typeof customInstance<void>>,) => {
-      return customInstance<void>(
-      {url: `http://127.0.0.1:3001/register/password`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: registerRequestDto
-    },
-      options);
-    }
-  return {getPublicKey,getPublicKeyRaw,loginByPassword,refresh,registerByPassword}};
-export type GetPublicKeyResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getPublicKey']>>>
-export type GetPublicKeyRawResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getPublicKeyRaw']>>>
-export type LoginByPasswordResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['loginByPassword']>>>
-export type RefreshResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['refresh']>>>
-export type RegisterByPasswordResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['registerByPassword']>>>
+    options?: SecondParameter<typeof customInstance<void>>,
+  ) => {
+    return customInstance<void>(
+      {
+        url: `http://127.0.0.1:3001/register/password`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: registerRequestDto,
+      },
+      options,
+    );
+  };
+  return {
+    getPublicKey,
+    getPublicKeyRaw,
+    loginByPassword,
+    refresh,
+    registerByPassword,
+  };
+};
+export type GetPublicKeyResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['getPublicKey']>>
+>;
+export type GetPublicKeyRawResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['getPublicKeyRaw']>>
+>;
+export type LoginByPasswordResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['loginByPassword']>>
+>;
+export type RefreshResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['refresh']>>
+>;
+export type RegisterByPasswordResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getAuth>['registerByPassword']>>
+>;
