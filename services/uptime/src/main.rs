@@ -1,4 +1,3 @@
-mod auth;
 mod blocked_ip;
 mod domain;
 mod openapi;
@@ -7,7 +6,6 @@ mod server;
 mod site;
 
 use dotenvy::dotenv;
-use jsonwebtoken::DecodingKey;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
@@ -38,7 +36,6 @@ pub struct AppState {
     pub forbidden_ip_repo: ForbiddenIpRepository,
     pub redis: redis::aio::MultiplexedConnection,
     pub challenge_repo: ChallengeRepository,
-    pub jwt_key: Arc<DecodingKey>,
 }
 
 async fn check_single_site(
@@ -199,10 +196,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let redis_client = redis::Client::open(redis_url)?;
     let redis_conn = redis_client.get_multiplexed_async_connection().await?;
     let challenge_repo = ChallengeRepository::new(redis_conn.clone());
-    let public_key_path = env::var("JWT_PUBLIC_KEY_PATH")
-        .unwrap_or_else(|_| "../identify/certs/public.pem".to_string());
-    let public_key = std::fs::read(public_key_path)?;
-    let jwt_key = Arc::new(DecodingKey::from_rsa_pem(&public_key)?);
 
     let state = AppState {
         pool: pool.clone(),
@@ -211,7 +204,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ping_repo: PingRepository::new(pool.clone()),
         redis: redis_conn,
         challenge_repo,
-        jwt_key,
     };
 
     let worker_config = WorkerConfig::from_env();

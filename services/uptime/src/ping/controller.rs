@@ -1,21 +1,18 @@
 use axum::Json;
-use axum::extract::{Extension, Path, Query, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{Router, get};
 
 use super::domain::PingRecord;
 use super::dto::GetPingsDto;
 use crate::AppState;
-use crate::domain::{SiteId, UserId};
+use crate::domain::SiteId;
 
 #[tracing::instrument(skip(state))]
 #[utoipa::path(
     get,
     path = "/sites/{site_id}/pings",
     tag = "Pings",
-    security(
-        ("bearerAuth" = [])
-    ),
     params(
         ("site_id" = uuid::Uuid, Path, description = "Идентификатор сайта"),
         GetPingsDto
@@ -27,14 +24,6 @@ use crate::domain::{SiteId, UserId};
             body = Vec<PingRecord>
         ),
         (
-            status = 401,
-            description = "Требуется авторизация (Bearer JWT токен)"
-        ),
-        (
-            status = 403,
-            description = "Идентификатор пользователя не совпадает с токеном"
-        ),
-        (
             status = 500,
             description = "Внутренняя ошибка сервера при чтении из базы данных",
             body = String
@@ -43,13 +32,9 @@ use crate::domain::{SiteId, UserId};
 )]
 pub async fn get_pings(
     State(state): State<AppState>,
-    Extension(owner): Extension<UserId>,
     Path(site_id): Path<SiteId>,
     Query(query): Query<GetPingsDto>,
 ) -> Result<Json<Vec<PingRecord>>, (StatusCode, String)> {
-    if query.user_id != owner {
-        return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
-    }
     let pings = state
         .ping_repo
         .get_pings(&query.user_id, &site_id)

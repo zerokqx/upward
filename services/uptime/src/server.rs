@@ -1,11 +1,10 @@
-use axum::middleware;
 use axum::{Json, Router, extract::DefaultBodyLimit, http::StatusCode, routing::get};
 use serde::Serialize;
 use std::net::SocketAddr;
+use tower_http::cors::CorsLayer;
 use tracing::debug;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use tower_http::cors::CorsLayer;
 
 use crate::openapi::ApiDoc;
 use crate::{AppState, ping, site};
@@ -53,18 +52,11 @@ pub async fn health_check() -> (StatusCode, Json<HealthResponseDto>) {
 
 /// Создание экземпляра Axum приложения со всеми подключенными роутами и состоянием
 pub fn create_app(state: AppState) -> Router {
-    let protected =
-        site::routes()
-            .merge(ping::routes())
-            .route_layer(middleware::from_fn_with_state(
-                state.clone(),
-                crate::auth::require_auth,
-            ));
-
     Router::new()
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
         .route("/health", get(health_check))
-        .merge(protected)
+        .merge(site::routes())
+        .merge(ping::routes())
         .layer(CorsLayer::permissive())
         .layer(DefaultBodyLimit::max(16 * 1024))
         .with_state(state)

@@ -99,9 +99,6 @@
               }
             }
           },
-          "401": {
-            "description": "Требуется авторизация (Bearer JWT токен)"
-          },
           "403": {
             "description": "Запрещено: целевой IP является приватным, локальным или заблокирован",
             "content": {
@@ -124,12 +121,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/sites/{site_id}/pings": {
@@ -176,12 +168,6 @@
               }
             }
           },
-          "401": {
-            "description": "Требуется авторизация (Bearer JWT токен)"
-          },
-          "403": {
-            "description": "Идентификатор пользователя не совпадает с токеном"
-          },
           "500": {
             "description": "Внутренняя ошибка сервера при чтении из базы данных",
             "content": {
@@ -192,12 +178,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/sites/{site_id}/verify": {
@@ -245,12 +226,6 @@
                 "example": "Challenge token mismatch or expired"
               }
             }
-          },
-          "401": {
-            "description": "Требуется авторизация (Bearer JWT токен)"
-          },
-          "403": {
-            "description": "Пользователь не является владельцем сайта"
           },
           "404": {
             "description": "Сайт не найден",
@@ -331,12 +306,6 @@
               }
             }
           },
-          "401": {
-            "description": "Требуется авторизация (Bearer JWT токен)"
-          },
-          "403": {
-            "description": "Идентификатор пользователя не совпадает с токеном"
-          },
           "500": {
             "description": "Внутренняя ошибка сервера при чтении из базы данных",
             "content": {
@@ -348,12 +317,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        }
       }
     }
   },
@@ -571,14 +535,6 @@
             "example": "verified"
           }
         }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "Access token (RS256 JWT)"
       }
     }
   },

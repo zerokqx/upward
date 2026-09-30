@@ -4,7 +4,7 @@ use crate::AppState;
 use crate::blocked_ip::ForbiddenIpRepository;
 use crate::domain::{SiteId, UserId};
 use axum::Json;
-use axum::extract::{Extension, Path, State};
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{Router, get, post};
 use reqwest::Url;
@@ -209,9 +209,6 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
     post,
     path = "/sites",
     tag = "Sites",
-    security(
-        ("bearerAuth" = [])
-    ),
     request_body(
         content = CreateSiteDto,
         description = "Данные для регистрации сайта в системе мониторинга",
@@ -239,10 +236,6 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
             example = json!("Only http and https schemes are allowed")
         ),
         (
-            status = 401,
-            description = "Требуется авторизация (Bearer JWT токен)"
-        ),
-        (
             status = 403,
             description = "Запрещено: целевой IP является приватным, локальным или заблокирован",
             body = String,
@@ -258,7 +251,6 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
 )]
 pub async fn create_site(
     State(state): State<AppState>,
-    Extension(owner): Extension<UserId>,
     Json(body): Json<CreateSiteDto>,
 ) -> Result<(StatusCode, Json<CreateSiteResponseDto>), (StatusCode, String)> {
     body.validate().map_err(|_| {
@@ -268,9 +260,6 @@ pub async fn create_site(
         )
     })?;
 
-    if body.user_id != owner {
-        return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
-    }
     let validator = IpValidator::new(state.forbidden_ip_repo);
     validator
         .validate_url(body.site.as_ref())
@@ -315,9 +304,6 @@ pub async fn create_site(
     get,
     path = "/sites/{user_id}",
     tag = "Sites",
-    security(
-        ("bearerAuth" = [])
-    ),
     params(
         ("user_id" = String, Path, description = "Идентификатор пользователя-владельца сайтов", example = "usr_01J8ABCDEF1234567890")
     ),
@@ -343,14 +329,6 @@ pub async fn create_site(
             ])
         ),
         (
-            status = 401,
-            description = "Требуется авторизация (Bearer JWT токен)"
-        ),
-        (
-            status = 403,
-            description = "Идентификатор пользователя не совпадает с токеном"
-        ),
-        (
             status = 500,
             description = "Внутренняя ошибка сервера при чтении из базы данных",
             body = String,
@@ -360,12 +338,8 @@ pub async fn create_site(
 )]
 pub async fn get_all_sites(
     State(state): State<AppState>,
-    Extension(owner): Extension<UserId>,
     Path(user_id): Path<UserId>,
 ) -> Result<Json<Vec<SiteResponseDto>>, (StatusCode, String)> {
-    if user_id != owner {
-        return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
-    }
     let sites = state
         .site_repo
         .get_all_sites_for_user(&user_id)
@@ -404,14 +378,6 @@ pub async fn get_all_sites(
             example = json!("Challenge token mismatch or expired")
         ),
         (
-            status = 401,
-            description = "Требуется авторизация (Bearer JWT токен)"
-        ),
-        (
-            status = 403,
-            description = "Пользователь не является владельцем сайта"
-        ),
-        (
             status = 404,
             description = "Сайт не найден",
             body = String,
@@ -427,7 +393,6 @@ pub async fn get_all_sites(
 )]
 pub async fn verify_site(
     State(state): State<AppState>,
-    Extension(owner): Extension<UserId>,
     Path(site_id): Path<SiteId>,
 ) -> Result<Json<VerifySiteResponseDto>, (StatusCode, String)> {
     let site = state
@@ -436,9 +401,6 @@ pub async fn verify_site(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or_else(|| (StatusCode::NOT_FOUND, "Site not found".into()))?;
-    if site.user_id != owner {
-        return Err((StatusCode::NOT_FOUND, "Site not found".into()));
-    }
 
     if site.active {
         return Ok(Json(VerifySiteResponseDto {
@@ -503,7 +465,6 @@ pub async fn verify_site(
 /// Выдать новый challenge для повторного подтверждения отключённого сайта.
 pub async fn reissue_challenge(
     State(state): State<AppState>,
-    Extension(owner): Extension<UserId>,
     Path(site_id): Path<SiteId>,
 ) -> Result<Json<CreateSiteResponseDto>, (StatusCode, String)> {
     let site = state
@@ -512,9 +473,6 @@ pub async fn reissue_challenge(
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?
         .ok_or_else(|| (StatusCode::NOT_FOUND, "Site not found".into()))?;
-    if site.user_id != owner {
-        return Err((StatusCode::NOT_FOUND, "Site not found".into()));
-    }
     if site.active {
         return Err((StatusCode::CONFLICT, "Site is active".into()));
     }
