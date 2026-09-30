@@ -26,3 +26,4 @@ password-hash = { version = "0.6.1", features = ["getrandom"] }
 strum = { version = "0.28.0", features = ["derive"] }
 jsonwebtoken = "9.3"
 validator = { version = "0.20", features = ["derive"] }
+tower-http = { version = "0.6", features = ["cors"] }

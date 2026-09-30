@@ -14,7 +14,8 @@ use utoipa::OpenApi;
         )
     ),
     servers(
-        (url = "/", description = "Текущий экземпляр сервиса")
+        (url = "http://localhost:3001", description = "Локальный инстанс сервиса"),
+        (url = "/", description = "Текущий хост")
     ),
     paths(
         crate::server::health_check,

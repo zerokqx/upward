@@ -1,6 +1,7 @@
 use axum::{Json, Router, extract::DefaultBodyLimit, http::StatusCode, routing::get};
 use serde::Serialize;
 use std::net::SocketAddr;
+use tower_http::cors::CorsLayer;
 use tracing::debug;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -55,6 +56,7 @@ pub fn create_app(state: AppState) -> Router {
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
         .merge(login::controller::routes())
         .route("/health", get(health_check))
+        .layer(CorsLayer::permissive())
         .layer(DefaultBodyLimit::max(16 * 1024))
         .with_state(state)
 }

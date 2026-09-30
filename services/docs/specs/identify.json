@@ -14,11 +14,11 @@
   "servers": [
     {
       "url": "http://localhost:3001",
-      "description": "Identify Service (Local)"
+      "description": "Локальный инстанс сервиса"
     },
     {
       "url": "/",
-      "description": "Текущий экземпляр сервиса"
+      "description": "Текущий хост"
     }
   ],
   "paths": {
