@@ -1,0 +1,43 @@
+language: 'typescript'
+layer: 'application'
+
+tasks:
+  build:
+    command: 'pnpm run build'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
+      - 'tsconfig.build.json'
+      - 'package.json'
+    outputs:
+      - 'dist'
+
+  codegen:
+    command: 'pnpm run codegen'
+    options:
+      cache: false
+
+  lint:
+    command: 'pnpm run lint'
+    inputs:
+      - 'src/**/*'
+      - 'test/**/*'
+      - 'oxlint.json'
+
+  format:
+    command: 'pnpm run format'
+    options:
+      cache: false
+
+  test:
+    command: 'pnpm run test'
+    inputs:
+      - 'src/**/*'
+      - 'test/**/*'
+      - 'vitest.config.ts'
+
+  start:
+    command: 'pnpm run start:dev'
+    options:
+      persistent: true
+      cache: false
