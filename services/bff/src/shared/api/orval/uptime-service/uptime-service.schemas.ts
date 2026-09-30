@@ -17,16 +17,16 @@
  */
 export interface CreateSiteDto {
   /**
-     * URL сайта для проверки (поддерживаются только http:// и https://)
-     * @minLength 1
-     * @maxLength 2048
-     */
+   * URL сайта для проверки (поддерживаются только http:// и https://)
+   * @minLength 1
+   * @maxLength 2048
+   */
   site: string;
   /**
-     * Идентификатор пользователя-владельца
-     * @minLength 1
-     * @maxLength 128
-     */
+   * Идентификатор пользователя-владельца
+   * @minLength 1
+   * @maxLength 128
+   */
   user_id: string;
 }
 
@@ -94,9 +94,9 @@ export interface SiteResponseDto {
   /** Идентификатор сайта */
   id: string;
   /**
-     * Время последней проверки (UTC)
-     * @nullable
-     */
+   * Время последней проверки (UTC)
+   * @nullable
+   */
   last_check?: string | null;
   /** Текущий статус сайта в очереди (idle, processing) */
   status: string;
@@ -111,8 +111,7 @@ export interface SiteResponseDto {
 /**
  * Статус состояния сайта в очереди мониторинга
  */
-export type SiteStatus = typeof SiteStatus[keyof typeof SiteStatus];
-
+export type SiteStatus = (typeof SiteStatus)[keyof typeof SiteStatus];
 
 export const SiteStatus = {
   idle: 'idle',
@@ -135,11 +134,10 @@ export interface VerifySiteResponseDto {
 }
 
 export type GetPingsParams = {
-/**
- * Идентификатор пользователя-владельца (извлекается BFF из JWT)
- * @minLength 1
- * @maxLength 128
- */
-user_id: string;
+  /**
+   * Идентификатор пользователя-владельца (извлекается BFF из JWT)
+   * @minLength 1
+   * @maxLength 128
+   */
+  user_id: string;
 };
-

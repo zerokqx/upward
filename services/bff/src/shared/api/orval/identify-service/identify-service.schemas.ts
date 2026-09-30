@@ -32,15 +32,15 @@ export interface HealthResponseDto {
  */
 export interface LoginByPasswordRequestDto {
   /**
-     * Адрес электронной почты пользователя
-     * @maxLength 320
-     */
+   * Адрес электронной почты пользователя
+   * @maxLength 320
+   */
   email: string;
   /**
-     * Пароль пользователя в открытом виде
-     * @minLength 8
-     * @maxLength 128
-     */
+   * Пароль пользователя в открытом виде
+   * @minLength 8
+   * @maxLength 128
+   */
   password: string;
 }
 
@@ -82,15 +82,14 @@ export interface RefreshRequestDto {
  */
 export interface RegisterRequestDto {
   /**
-     * Адрес электронной почты пользователя
-     * @maxLength 320
-     */
+   * Адрес электронной почты пользователя
+   * @maxLength 320
+   */
   email: string;
   /**
-     * Пароль пользователя в открытом виде
-     * @minLength 8
-     * @maxLength 128
-     */
+   * Пароль пользователя в открытом виде
+   * @minLength 8
+   * @maxLength 128
+   */
   password: string;
 }
-

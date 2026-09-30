@@ -1,7 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
 
-export function handleUpstreamError(error: unknown, serviceName: string): never {
+export function handleUpstreamError(
+  error: unknown,
+  serviceName: string,
+): never {
   if (axios.isAxiosError(error)) {
     if (error.response) {
       const status = error.response.status;

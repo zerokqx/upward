@@ -12,29 +12,28 @@
  * - Проверка работоспособности сервиса (Liveness/Readiness probe)
  * OpenAPI spec version: 0.1.0
  */
-import type {
-  HealthResponseDto
-} from '../uptime-service.schemas.js';
+import type { HealthResponseDto } from '../uptime-service.schemas.js';
 
 import { customInstance } from '../../../axios-client.js';
 
-
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-  export const getHealth = () => {
-/**
- * Возвращает текущее состояние доступности микросервиса.
- * Используется оркестратором (Docker, Kubernetes) для liveness и readiness проб.
- * @summary Проверка работоспособности сервиса (Health Check)
- */
-const healthCheck = (
-
- options?: SecondParameter<typeof customInstance<HealthResponseDto>>,) => {
-      return customInstance<HealthResponseDto>(
-      {url: `http://127.0.0.1:3000/health`, method: 'GET'
-    },
-      options);
-    }
-  return {healthCheck}};
-export type HealthCheckResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getHealth>['healthCheck']>>>
+export const getHealth = () => {
+  /**
+   * Возвращает текущее состояние доступности микросервиса.
+   * Используется оркестратором (Docker, Kubernetes) для liveness и readiness проб.
+   * @summary Проверка работоспособности сервиса (Health Check)
+   */
+  const healthCheck = (
+    options?: SecondParameter<typeof customInstance<HealthResponseDto>>,
+  ) => {
+    return customInstance<HealthResponseDto>(
+      { url: `http://127.0.0.1:3000/health`, method: 'GET' },
+      options,
+    );
+  };
+  return { healthCheck };
+};
+export type HealthCheckResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getHealth>['healthCheck']>>
+>;

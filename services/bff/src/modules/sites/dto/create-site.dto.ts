@@ -1,38 +1,33 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUrl, MaxLength } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { z } from 'zod';
+import { createZodDto } from 'nestjs-zod';
 
-export class CreateSiteDto {
-  @ApiProperty({
-    description:
-      'URL сайта для проверки (поддерживаются протоколы http:// и https://)',
-    example: 'https://example.com',
-    minLength: 1,
-    maxLength: 2048,
-  })
-  @Transform(({ value, obj }) =>
-    (typeof value === 'string'
-      ? value
-      : typeof obj?.url === 'string'
-        ? obj.url
-        : value
-    )?.trim(),
-  )
-  @IsNotEmpty({ message: 'Поле site (URL сайта) обязательно для заполнения' })
-  @IsString({ message: 'URL сайта должен быть строкой' })
-  @IsUrl(
-    {
-      require_tld: false,
-      protocols: ['http', 'https'],
-      require_protocol: true,
-    },
-    {
-      message:
+export const CreateSiteSchema = z.preprocess(
+  (val) => {
+    if (val && typeof val === 'object' && !('site' in val) && 'url' in val) {
+      return { ...val, site: (val as { url: unknown }).url };
+    }
+    return val;
+  },
+  z.object({
+    site: z
+      .string({ message: 'Поле site (URL сайта) обязательно для заполнения' })
+      .trim()
+      .min(1, 'Поле site (URL сайта) обязательно для заполнения')
+      .max(2048, 'Длина URL сайта не должна превышать 2048 символов')
+      .url(
         'Некорректный формат URL. Поддерживаются только протоколы http:// и https://',
-    },
-  )
-  @MaxLength(2048, {
-    message: 'Длина URL сайта не должна превышать 2048 символов',
-  })
-  site!: string;
-}
+      )
+      .refine(
+        (val) => val.startsWith('http://') || val.startsWith('https://'),
+        {
+          message:
+            'Некорректный протокол URL. Поддерживаются только http:// и https://',
+        },
+      )
+      .describe(
+        'URL сайта для проверки (поддерживаются протоколы http:// и https://)',
+      ),
+  }),
+);
+
+export class CreateSiteDto extends createZodDto(CreateSiteSchema) {}

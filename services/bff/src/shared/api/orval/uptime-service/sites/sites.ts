@@ -16,59 +16,70 @@ import type {
   CreateSiteDto,
   CreateSiteResponseDto,
   SiteResponseDto,
-  VerifySiteResponseDto
+  VerifySiteResponseDto,
 } from '../uptime-service.schemas.js';
 
 import { customInstance } from '../../../axios-client.js';
 import type { BodyType } from '../../../axios-client.js';
 
-
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-  export const getSites = () => {
-/**
- * Регистрирует URL сайта для периодической проверки доступности.
- * Выполняет DNS-резолвинг и проверяет, что целевой IP-адрес не является приватным,
- * локальным (loopback) или заблокированным в таблице `forbidden_ip`.
- * @summary Добавить новый сайт в мониторинг
- */
-const createSite = (
+export const getSites = () => {
+  /**
+   * Регистрирует URL сайта для периодической проверки доступности.
+   * Выполняет DNS-резолвинг и проверяет, что целевой IP-адрес не является приватным,
+   * локальным (loopback) или заблокированным в таблице `forbidden_ip`.
+   * @summary Добавить новый сайт в мониторинг
+   */
+  const createSite = (
     createSiteDto: BodyType<CreateSiteDto>,
- options?: SecondParameter<typeof customInstance<CreateSiteResponseDto>>,) => {
-      return customInstance<CreateSiteResponseDto>(
-      {url: `http://127.0.0.1:3000/sites`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createSiteDto
-    },
-      options);
-    }
+    options?: SecondParameter<typeof customInstance<CreateSiteResponseDto>>,
+  ) => {
+    return customInstance<CreateSiteResponseDto>(
+      {
+        url: `http://127.0.0.1:3000/sites`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: createSiteDto,
+      },
+      options,
+    );
+  };
   /**
- * Обращается по адресу {site.url}/upward. Ответ должен быть JSON-объектом
- * с полем `challenge_token`, совпадающим с ожидаемым токеном из Redis.
- * @summary Подтвердить владение сайтом через HTTP-01 Challenge
- */
-const verifySite = (
+   * Обращается по адресу {site.url}/upward. Ответ должен быть JSON-объектом
+   * с полем `challenge_token`, совпадающим с ожидаемым токеном из Redis.
+   * @summary Подтвердить владение сайтом через HTTP-01 Challenge
+   */
+  const verifySite = (
     siteId: string,
- options?: SecondParameter<typeof customInstance<VerifySiteResponseDto>>,) => {
-      return customInstance<VerifySiteResponseDto>(
-      {url: `http://127.0.0.1:3000/sites/${siteId}/verify`, method: 'POST'
-    },
-      options);
-    }
+    options?: SecondParameter<typeof customInstance<VerifySiteResponseDto>>,
+  ) => {
+    return customInstance<VerifySiteResponseDto>(
+      { url: `http://127.0.0.1:3000/sites/${siteId}/verify`, method: 'POST' },
+      options,
+    );
+  };
   /**
- * Возвращает список всех зарегистрированных сайтов конкретного пользователя вместе со статусом и доп. данными последней проверки доступности.
- * @summary Получить список отслеживаемых сайтов пользователя
- */
-const getAllSites = (
+   * Возвращает список всех зарегистрированных сайтов конкретного пользователя вместе со статусом и доп. данными последней проверки доступности.
+   * @summary Получить список отслеживаемых сайтов пользователя
+   */
+  const getAllSites = (
     userId: string,
- options?: SecondParameter<typeof customInstance<SiteResponseDto[]>>,) => {
-      return customInstance<SiteResponseDto[]>(
-      {url: `http://127.0.0.1:3000/sites/${userId}`, method: 'GET'
-    },
-      options);
-    }
-  return {createSite,verifySite,getAllSites}};
-export type CreateSiteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getSites>['createSite']>>>
-export type VerifySiteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getSites>['verifySite']>>>
-export type GetAllSitesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getSites>['getAllSites']>>>
+    options?: SecondParameter<typeof customInstance<SiteResponseDto[]>>,
+  ) => {
+    return customInstance<SiteResponseDto[]>(
+      { url: `http://127.0.0.1:3000/sites/${userId}`, method: 'GET' },
+      options,
+    );
+  };
+  return { createSite, verifySite, getAllSites };
+};
+export type CreateSiteResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getSites>['createSite']>>
+>;
+export type VerifySiteResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getSites>['verifySite']>>
+>;
+export type GetAllSitesResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getSites>['getAllSites']>>
+>;

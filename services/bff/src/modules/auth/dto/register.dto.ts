@@ -1,24 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { z } from 'zod';
+import { createZodDto } from 'nestjs-zod';
 
-export class RegisterDto {
-  @ApiProperty({
-    example: 'user@example.com',
-    description: 'Адрес электронной почты пользователя',
-    maxLength: 320,
-  })
-  @IsEmail({}, { message: 'Некорректный формат адреса электронной почты' })
-  @MaxLength(320, { message: 'Длина email не должна превышать 320 символов' })
-  email!: string;
+export const RegisterSchema = z.object({
+  email: z
+    .string({ message: 'Поле email обязательно для заполнения' })
+    .trim()
+    .email('Некорректный формат email адреса')
+    .max(320, 'Email не должен превышать 320 символов')
+    .describe('Email пользователя'),
+  password: z
+    .string({ message: 'Поле password обязательно для заполнения' })
+    .min(8, 'Пароль должен содержать как минимум 8 символов')
+    .max(128, 'Пароль не должен превышать 128 символов')
+    .describe('Пароль учетной записи (от 8 до 128 символов)'),
+});
 
-  @ApiProperty({
-    example: 'strongpassword123',
-    description: 'Пароль учетной записи',
-    minLength: 8,
-    maxLength: 128,
-  })
-  @IsString({ message: 'Пароль должен быть строкой' })
-  @MinLength(8, { message: 'Пароль должен содержать не менее 8 символов' })
-  @MaxLength(128, { message: 'Пароль не должен превышать 128 символов' })
-  password!: string;
-}
+export class RegisterDto extends createZodDto(RegisterSchema) {}

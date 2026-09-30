@@ -12,27 +12,29 @@
  * - Проверка работоспособности сервиса (Liveness/Readiness probe)
  * OpenAPI spec version: 0.1.0
  */
-import type {
-  GetPingsParams,
-  PingRecord
-} from '../uptime-service.schemas.js';
+import type { GetPingsParams, PingRecord } from '../uptime-service.schemas.js';
 
 import { customInstance } from '../../../axios-client.js';
 
-
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-  export const getPings = () => {
-const getPings = (
+export const getPings = () => {
+  const getPings = (
     siteId: string,
     params: GetPingsParams,
- options?: SecondParameter<typeof customInstance<PingRecord[]>>,) => {
-      return customInstance<PingRecord[]>(
-      {url: `http://127.0.0.1:3000/sites/${siteId}/pings`, method: 'GET',
-        params
-    },
-      options);
-    }
-  return {getPings}};
-export type GetPingsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getPings>['getPings']>>>
+    options?: SecondParameter<typeof customInstance<PingRecord[]>>,
+  ) => {
+    return customInstance<PingRecord[]>(
+      {
+        url: `http://127.0.0.1:3000/sites/${siteId}/pings`,
+        method: 'GET',
+        params,
+      },
+      options,
+    );
+  };
+  return { getPings };
+};
+export type GetPingsResult = NonNullable<
+  Awaited<ReturnType<ReturnType<typeof getPings>['getPings']>>
+>;
