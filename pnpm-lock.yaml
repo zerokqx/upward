@@ -28,6 +28,9 @@ importers:
       '@nestjs/swagger':
         specifier: ^12.0.2
         version: 12.0.2(@nestjs/common@12.0.1(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.0.1)(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(typescript@6.0.3)
+      '@scalar/nestjs-api-reference':
+        specifier: ^1.2.24
+        version: 1.2.24
       axios:
         specifier: ^1.20.0
         version: 1.20.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
@@ -956,6 +959,10 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
+  '@scalar/client-side-rendering@0.4.6':
+    resolution: {integrity: sha512-dJtecEsMRli/g6RRXCsoDwnBFivAnIcWsX+DVjzLuLyAwxvdlxNVI8abvg5aV1XcRKoKVYjbiz7lJsLiu7eH5g==}
+    engines: {node: '>=22'}
+
   '@scalar/helpers@0.16.0':
     resolution: {integrity: sha512-lCBNB3hN8sGfUghz5AK5r63G+1/x4PHSgjH9asJVWne5e1tnKkti5eaejPLgy8didpAZsyXEp744xIosoWu9AA==}
     engines: {node: '>=22'}
@@ -966,6 +973,10 @@ packages:
 
   '@scalar/json-schema-validator@0.1.7':
     resolution: {integrity: sha512-ju7okKWhGhMhMGWUBp/FIj8/pRfmwCBNsWZH1Kj0gbALVA7V4jctXTfHZc9jfcMG4ZnKErVs7K+zzQJ52rVWhw==}
+    engines: {node: '>=22'}
+
+  '@scalar/nestjs-api-reference@1.2.24':
+    resolution: {integrity: sha512-tm3uaNxzVHtG1oC9dDQLtP1GJOFqoJ57OlFutTXK6/t8rAwB8ZBDnwY8jFPcx4mhur8XEkKL9vNBAZVJunmCwA==}
     engines: {node: '>=22'}
 
   '@scalar/openapi-parser@0.29.8':
@@ -984,9 +995,17 @@ packages:
     resolution: {integrity: sha512-Kc1i7GFBOVBHqDrx5djH+TxMYfS7tez0zXW8kdFF3UdEJXpV9JaH932qrsx2Pp7rvtyg2aIQbDQVRosNcOik1A==}
     engines: {node: '>=22'}
 
+  '@scalar/schemas@0.12.2':
+    resolution: {integrity: sha512-LIqqT0G7Chj57h1XY1FC3mOJriqNvPOg41V8NOsWGP/VCHCL/lg6K+D3ejwUg4mYNR3TTYaQARlr630mzqKgDA==}
+    engines: {node: '>=22'}
+
   '@scalar/types@0.22.2':
     resolution: {integrity: sha512-WxWEO4MJXhzgpt/vviWVNaB4edonoqETs2pKRlCxOM1+ISwy2OXEIcDF921nqw9woOpA9s3Qidq4En+5hzpHaA==}
     engines: {node: '>=22'}
+
+  '@scalar/validation@0.6.5':
+    resolution: {integrity: sha512-t/dtbqesbOLsTusFI2kXfiFEQOiZC7+oAY+jZnE82Y64xLamo/1KrZpta8GkuAfIHyeOHOx5bDFid04eO13MIg==}
+    engines: {node: '>=20'}
 
   '@scarf/scarf@1.4.0':
     resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
@@ -3224,6 +3243,13 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
+  '@scalar/client-side-rendering@0.4.6':
+    dependencies:
+      '@scalar/helpers': 0.16.0
+      '@scalar/schemas': 0.12.2
+      '@scalar/types': 0.22.2
+      '@scalar/validation': 0.6.5
+
   '@scalar/helpers@0.16.0': {}
 
   '@scalar/json-magic@0.15.3':
@@ -3241,6 +3267,10 @@ snapshots:
       ajv-draft-04: 1.0.0(ajv@8.20.0)
       ajv-formats: 3.0.1(ajv@8.20.0)
       yaml: 2.9.1
+
+  '@scalar/nestjs-api-reference@1.2.24':
+    dependencies:
+      '@scalar/client-side-rendering': 0.4.6
 
   '@scalar/openapi-parser@0.29.8':
     dependencies:
@@ -3266,12 +3296,19 @@ snapshots:
       '@scalar/types': 0.22.2
       yaml: 2.9.1
 
+  '@scalar/schemas@0.12.2':
+    dependencies:
+      '@scalar/helpers': 0.16.0
+      '@scalar/validation': 0.6.5
+
   '@scalar/types@0.22.2':
     dependencies:
       '@scalar/helpers': 0.16.0
       nanoid: 5.1.16
       type-fest: 5.10.0
       zod: 4.6.5
+
+  '@scalar/validation@0.6.5': {}
 
   '@scarf/scarf@1.4.0': {}
 

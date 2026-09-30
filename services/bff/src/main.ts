@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { ZodValidationPipe, cleanupOpenApiDoc } from 'nestjs-zod';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -30,6 +31,17 @@ async function bootstrap() {
   cleanupOpenApiDoc(document);
   SwaggerModule.setup('docs', app, document);
 
+  app.use(
+    '/reference',
+    apiReference({
+      spec: {
+        content: document,
+      },
+      pageTitle: 'Upward BFF API Reference',
+      theme: 'purple',
+    }),
+  );
+
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
   Logger.log(
@@ -38,6 +50,10 @@ async function bootstrap() {
   );
   Logger.log(
     `Swagger documentation available at http://127.0.0.1:${port}/docs`,
+    'Bootstrap',
+  );
+  Logger.log(
+    `Scalar API Reference available at http://127.0.0.1:${port}/reference`,
     'Bootstrap',
   );
 }
