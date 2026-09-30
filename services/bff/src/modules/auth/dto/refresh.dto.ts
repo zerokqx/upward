@@ -3,8 +3,7 @@ import { createZodDto } from 'nestjs-zod';
 
 export const RefreshSchema = z.object({
   refresh: z
-    .string({ message: 'Поле refresh обязательно для заполнения' })
-    .uuid('Refresh токен должен быть валидным UUID v4')
+    .uuid({ message: 'Refresh токен должен быть валидным UUID v4' })
     .describe('Refresh токен сессии (UUID v4)'),
 });
 

@@ -10,13 +10,11 @@ export const CreateSiteSchema = z.preprocess(
   },
   z.object({
     site: z
-      .string({ message: 'Поле site (URL сайта) обязательно для заполнения' })
-      .trim()
-      .min(1, 'Поле site (URL сайта) обязательно для заполнения')
+      .url({
+        message:
+          'Некорректный формат URL. Поддерживаются только протоколы http:// и https://',
+      })
       .max(2048, 'Длина URL сайта не должна превышать 2048 символов')
-      .url(
-        'Некорректный формат URL. Поддерживаются только протоколы http:// и https://',
-      )
       .refine(
         (val) => val.startsWith('http://') || val.startsWith('https://'),
         {
