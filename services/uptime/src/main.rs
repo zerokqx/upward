@@ -166,7 +166,7 @@ fn spawn_uptime_worker(state: AppState, config: WorkerConfig) -> JoinHandle<()> 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().expect(".env file not found");
+    dotenv().ok();
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::DEBUG)
         .finish();

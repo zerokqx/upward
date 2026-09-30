@@ -1,12 +1,3 @@
-services:
-  redis:
-    image: redis:7-alpine
-    container_name: upward-redis
-    restart: always
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - redisdata:/data
-
-volumes:
-  redisdata:
+include:
+  - services/identify/compose.yml
+  - services/uptime/compose.yml

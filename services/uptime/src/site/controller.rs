@@ -12,6 +12,7 @@ use tokio::net::lookup_host;
 
 use super::domain::Site;
 use super::dto::{CreateSiteDto, CreateSiteResponseDto, SiteResponseDto, VerifySiteResponseDto};
+use validator::Validate;
 
 #[derive(Clone)]
 pub struct IpValidator {
@@ -239,6 +240,13 @@ pub async fn create_site(
     Extension(owner): Extension<UserId>,
     Json(body): Json<CreateSiteDto>,
 ) -> Result<(StatusCode, Json<CreateSiteResponseDto>), (StatusCode, String)> {
+    body.validate().map_err(|_| {
+        (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Invalid request data".to_string(),
+        )
+    })?;
+
     if body.user_id != owner {
         return Err((StatusCode::FORBIDDEN, "User ID does not match token".into()));
     }

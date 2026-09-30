@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH target_sites AS (\n                SELECT id\n                FROM sites\n                WHERE active = TRUE\n                  AND (\n                    (status = 'idle' AND (last_check IS NULL OR last_check < NOW() - INTERVAL '60 seconds'))\n                    OR (status = 'processing' AND status_updated_at < NOW() - INTERVAL '3 minutes')\n                  )\n                ORDER BY last_check ASC NULLS FIRST\n                LIMIT $1\n                FOR UPDATE SKIP LOCKED\n            )\n            UPDATE sites s\n            SET status = 'processing',\n                status_updated_at = NOW()\n            FROM target_sites ts\n            WHERE s.id = ts.id\n            RETURNING s.id, s.url, s.user_id, s.active\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f1f2d962a7924bdb4065ad38f0f78ad3ec8642a5b9f2dd20083bce9bb79cebcb"
+}

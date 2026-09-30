@@ -7,6 +7,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use validator::Validate;
 
 use crate::AppState;
 use crate::services::RefreshError;
@@ -69,6 +70,10 @@ pub async fn login_by_password(
     State(state): State<AppState>,
     Json(body): Json<LoginByPasswordRequestDto>,
 ) -> impl IntoResponse {
+    if body.validate().is_err() {
+        return StatusCode::UNPROCESSABLE_ENTITY.into_response();
+    }
+
     let user = state.user_repo.find_by_email(&body.email).await;
 
     match user {
@@ -143,6 +148,10 @@ pub async fn refresh(
     State(state): State<AppState>,
     Json(body): Json<RefreshRequestDto>,
 ) -> impl IntoResponse {
+    if body.validate().is_err() {
+        return StatusCode::UNPROCESSABLE_ENTITY.into_response();
+    }
+
     let mut redis = state.redis.clone();
     match state
         .jwt_service
@@ -177,6 +186,9 @@ pub async fn register_by_password(
     State(state): State<AppState>,
     Json(body): Json<RegisterRequestDto>,
 ) -> Result<impl IntoResponse, StatusCode> {
+    body.validate()
+        .map_err(|_| StatusCode::UNPROCESSABLE_ENTITY)?;
+
     if state
         .user_repo
         .find_by_email(&body.email)
@@ -244,5 +256,4 @@ pub fn routes() -> Router<AppState> {
         .route("/keys/public", get(get_public_key))
         .route("/keys/public.pem", get(get_public_key_raw))
 }
-
 

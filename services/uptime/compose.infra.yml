@@ -12,6 +12,22 @@ services:
       - "127.0.0.1:5434:5432"                  # Проброс портов на 5434 для избежания конфликтов
     volumes:
       - tsdata:/var/lib/postgresql/data # Сохранение данных на диске хоста
+    networks:
+      - uptime-infra
+
+  uptime-redis:
+    image: redis:7-alpine
+    container_name: uptime-redis
+    restart: always
+    volumes:
+      - uptime-redisdata:/data
+    networks:
+      - uptime-infra
 
 volumes:
   tsdata: # Именованный том для таймскейла
+  uptime-redisdata:
+
+networks:
+  uptime-infra:
+    name: uptime-infra

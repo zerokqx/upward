@@ -1,0 +1,26 @@
+services:
+  identify:
+    build:
+      context: ../..
+      dockerfile: services/identify/Dockerfile
+    container_name: upward-identify
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://identify_user:identify_password@postgres:5432/identifydb
+      REDIS_URL: redis://identify-redis:6379
+      HOST: 0.0.0.0
+      PORT: 3001
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public_key
+    volumes:
+      - ./certs/private.pem:/run/secrets/jwt_private_key:ro
+      - ./certs/public.pem:/run/secrets/jwt_public_key:ro
+    ports:
+      - "127.0.0.1:3001:3001"
+    networks:
+      - identify-infra
+
+networks:
+  identify-infra:
+    external: true
+    name: identify-infra

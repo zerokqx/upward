@@ -1,7 +1,35 @@
-# .moon/tasks/docker.yml
 inheritedBy:
   files:
     - "compose.infra.yml"
+    - "compose.yml"
+
 tasks:
   compose-infra-up:
     command: "docker compose -f $projectRoot/compose.infra.yml up -d"
+    options:
+      cache: false
+
+  compose-infra-down:
+    command: "docker compose -f $projectRoot/compose.infra.yml down"
+    options:
+      cache: false
+
+  compose-build:
+    command: "docker compose -f $projectRoot/compose.yml build"
+    options:
+      cache: false
+
+  compose-up:
+    command: "docker compose -f $projectRoot/compose.yml up --build"
+    options:
+      cache: false
+
+  compose-up-detached:
+    command: "docker compose -f $projectRoot/compose.yml up --build -d"
+    options:
+      cache: false
+
+  compose-down:
+    command: "docker compose -f $projectRoot/compose.yml down"
+    options:
+      cache: false

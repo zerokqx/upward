@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sites SET active = FALSE, status = 'idle', status_updated_at = NOW() WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "831287796220e3892c4553a78ff707a791ea1e99049b5e76c1c3e289f9c97db5"
+}

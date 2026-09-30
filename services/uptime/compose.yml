@@ -1,0 +1,26 @@
+services:
+  uptime:
+    build:
+      context: ../..
+      dockerfile: services/uptime/Dockerfile
+    container_name: upward-uptime
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://myuser:mypassword@timescaledb:5432/uptimedb
+      REDIS_URL: redis://uptime-redis:6379
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public_key
+      HOST: 0.0.0.0
+      PORT: 3000
+      PING_BATCH_SIZE: 500
+      PING_CONCURRENCY: 25
+    volumes:
+      - ../identify/certs/public.pem:/run/secrets/jwt_public_key:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - uptime-infra
+
+networks:
+  uptime-infra:
+    external: true
+    name: uptime-infra

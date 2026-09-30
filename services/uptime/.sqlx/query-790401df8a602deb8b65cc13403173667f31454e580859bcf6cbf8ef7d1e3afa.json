@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                s.id as \"id: SiteId\", \n                s.user_id as \"user_id: UserId\", \n                s.url as \"url: SiteUrl\", \n                s.created_at, \n                s.last_check, \n                s.status as \"status: SiteStatus\", \n                s.status_updated_at,\n                s.active,\n                p.extra\n            FROM sites s\n            LEFT JOIN LATERAL (\n                SELECT extra\n                FROM site_pings\n                WHERE site_id = s.id\n                ORDER BY time DESC\n                LIMIT 1\n            ) p ON true\n            WHERE s.user_id = $1\n            ORDER BY s.id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: SiteId",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id: UserId",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "url: SiteUrl",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "last_check",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: SiteStatus",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "status_updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "extra",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "790401df8a602deb8b65cc13403173667f31454e580859bcf6cbf8ef7d1e3afa"
+}

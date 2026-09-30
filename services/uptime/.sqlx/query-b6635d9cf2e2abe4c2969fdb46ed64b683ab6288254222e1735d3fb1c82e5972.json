@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                s.id AS site_id,\n                p.duration_ms,\n                p.extra\n            FROM sites s\n            JOIN site_pings p ON p.site_id = s.id\n            WHERE s.user_id = $1\n              AND s.id = $2\n              AND p.time >= NOW() - INTERVAL '30 days'\n            ORDER BY p.time DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "site_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "duration_ms",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "extra",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "b6635d9cf2e2abe4c2969fdb46ed64b683ab6288254222e1735d3fb1c82e5972"
+}

@@ -50,6 +50,12 @@ impl fmt::Display for UserId {
     }
 }
 
+impl AsRef<str> for UserId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 /// URL сайта
 #[derive(
     Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema, sqlx::Type,

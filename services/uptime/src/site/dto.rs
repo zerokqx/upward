@@ -1,17 +1,37 @@
 use serde::{Deserialize, Serialize};
 
 use crate::domain::{SiteId, SiteStatus, SiteUrl, UserId};
+use validator::Validate;
 
 /// Данные для регистрации нового сайта в мониторинге
-#[derive(Deserialize, Debug, utoipa::ToSchema)]
+#[derive(Deserialize, Debug, Validate, utoipa::ToSchema)]
 pub struct CreateSiteDto {
     /// Идентификатор пользователя-владельца
-    #[schema(value_type = String, example = "usr_01J8ABCDEF1234567890")]
+    #[schema(value_type = String, min_length = 1, max_length = 128, example = "usr_01J8ABCDEF1234567890")]
+    #[validate(custom(function = validate_user_id))]
     pub user_id: UserId,
 
     /// URL сайта для проверки (поддерживаются только http:// и https://)
-    #[schema(value_type = String, example = "https://example.com")]
+    #[schema(value_type = String, min_length = 1, max_length = 2048, example = "https://example.com")]
+    #[validate(custom(function = validate_site_url))]
     pub site: SiteUrl,
+}
+
+fn validate_user_id(value: &UserId) -> Result<(), validator::ValidationError> {
+    validate_length(value.as_ref(), 1, 128)
+}
+
+fn validate_site_url(value: &SiteUrl) -> Result<(), validator::ValidationError> {
+    validate_length(value.as_ref(), 1, 2048)
+}
+
+fn validate_length(value: &str, min: usize, max: usize) -> Result<(), validator::ValidationError> {
+    let length = value.chars().count();
+    if (min..=max).contains(&length) {
+        Ok(())
+    } else {
+        Err(validator::ValidationError::new("length"))
+    }
 }
 
 /// Результат успешного создания сайта

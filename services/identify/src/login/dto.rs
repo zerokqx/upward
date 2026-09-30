@@ -1,17 +1,20 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::domain::{AccessToken, RefreshToken};
 
 /// Запрос на аутентификацию по email и паролю
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema, Validate)]
 pub struct LoginByPasswordRequestDto {
     /// Адрес электронной почты пользователя
-    #[schema(example = "user@example.com")]
+    #[schema(format = Email, max_length = 320, example = "user@example.com")]
+    #[validate(email, length(max = 320))]
     pub email: String,
 
     /// Пароль пользователя в открытом виде
-    #[schema(example = "strongpassword123")]
+    #[schema(min_length = 8, max_length = 128, example = "strongpassword123")]
+    #[validate(length(min = 8, max = 128))]
     pub password: String,
 }
 
@@ -26,22 +29,25 @@ pub struct LoginByPasswordResponseDto {
 }
 
 /// Запрос на обновление пары токенов (Refresh Token Rotation)
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema, Validate)]
 pub struct RefreshRequestDto {
     /// Текущий активный Refresh токен
-    #[schema(example = "1024ad10-4b6d-490c-a55d-ed70dcbe4f84")]
+    #[schema(format = Uuid, min_length = 36, max_length = 36, example = "1024ad10-4b6d-490c-a55d-ed70dcbe4f84")]
+    #[validate(length(equal = 36))]
     pub refresh: RefreshToken,
 }
 
 /// Запрос на регистрацию пользователя по email и паролю
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema, Validate)]
 pub struct RegisterRequestDto {
     /// Адрес электронной почты пользователя
-    #[schema(example = "newuser@example.com")]
+    #[schema(format = Email, max_length = 320, example = "newuser@example.com")]
+    #[validate(email, length(max = 320))]
     pub email: String,
 
     /// Пароль пользователя в открытом виде
-    #[schema(example = "strongpassword123")]
+    #[schema(min_length = 8, max_length = 128, example = "strongpassword123")]
+    #[validate(length(min = 8, max = 128))]
     pub password: String,
 }
 
@@ -56,5 +62,3 @@ pub struct PublicKeyResponseDto {
     #[schema(example = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----")]
     pub public_key: String,
 }
-
-

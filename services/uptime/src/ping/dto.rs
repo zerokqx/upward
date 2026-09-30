@@ -8,6 +8,6 @@ use crate::domain::UserId;
 #[into_params(parameter_in = Query)]
 pub struct GetPingsDto {
     /// Идентификатор пользователя-владельца (извлекается BFF из JWT)
-    #[param(value_type = String, example = "usr_01J8ABCDEF1234567890")]
+    #[param(value_type = String, min_length = 1, max_length = 128, example = "usr_01J8ABCDEF1234567890")]
     pub user_id: UserId,
 }
