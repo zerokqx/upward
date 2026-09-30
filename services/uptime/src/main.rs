@@ -113,6 +113,16 @@ async fn process_batch(
 
     info!("Fetched {} sites for ping...", sites.len());
 
+    let allowed_widgets = match state.ping_repo.get_allowed_widget_types().await {
+        Ok(widgets) => Arc::new(widgets),
+        Err(err) => {
+            error!("Error fetching allowed widget types: {err}");
+            return;
+        }
+    };
+
+    let pinger = pinger.clone().with_allowed_widgets(allowed_widgets);
+
     let outcomes: Vec<(PingRecord, bool)> = stream::iter(sites)
         .map(|site| {
             let pinger = pinger.clone();
@@ -154,7 +164,7 @@ fn spawn_uptime_worker(state: AppState, config: WorkerConfig) -> JoinHandle<()> 
             config.batch_size, config.concurrency
         );
         let mut ticker = interval(Duration::from_secs(10));
-        let pinger = HttpPinger::new();
+        let pinger = HttpPinger::new(state.pool.clone());
         let validator = IpValidator::new(state.forbidden_ip_repo.clone());
 
         loop {

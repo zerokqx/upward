@@ -14,11 +14,24 @@ impl PingRepository {
         Self { pool }
     }
 
+    pub async fn get_allowed_widget_types(
+        &self,
+    ) -> Result<std::collections::HashSet<String>, sqlx::Error> {
+        let types: Vec<String> = sqlx::query_scalar::<_, String>("SELECT name FROM widgets")
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(types.into_iter().collect())
+    }
+
     pub async fn save_ping(
         &self,
         site_id: SiteId,
         ping: &PingExecution,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), super::domain::PingError> {
+        let allowed_types = self.get_allowed_widget_types().await?;
+        super::domain::validate_ping_widgets(&ping.extra, &allowed_types)?;
+
         let extra_json = serde_json::to_value(&ping.extra).unwrap_or(serde_json::Value::Null);
         let duration_ms = ping.ping_duration.as_secs_f64() * 1000.0;
 
