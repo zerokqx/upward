@@ -17,6 +17,7 @@ use validator::Validate;
 #[derive(Clone)]
 pub struct IpValidator {
     forbidden_ip_repo: ForbiddenIpRepository,
+    allow_private_ips: bool,
 }
 
 #[derive(Debug, thiserror::Error, Eq, PartialEq)]
@@ -63,7 +64,20 @@ impl From<IpValidationError> for UrlValidationError {
 
 impl IpValidator {
     pub fn new(forbidden_ip_repo: ForbiddenIpRepository) -> Self {
-        Self { forbidden_ip_repo }
+        let allow_private_ips = std::env::var("ALLOW_PRIVATE_IPS")
+            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
+            .unwrap_or(false);
+
+        Self {
+            forbidden_ip_repo,
+            allow_private_ips,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn with_allow_private_ips(mut self, allow: bool) -> Self {
+        self.allow_private_ips = allow;
+        self
     }
 
     pub async fn validate(&self, ip: IpAddr) -> Result<(), IpValidationError> {
@@ -71,7 +85,7 @@ impl IpValidator {
             IpAddr::V4(v4) => Self::is_forbidden_ipv4(v4),
             IpAddr::V6(v6) => Self::is_forbidden_ipv6(v6),
         };
-        if is_private {
+        if is_private && !self.allow_private_ips {
             return Err(IpValidationError::IpInvalid);
         }
 
@@ -551,10 +565,23 @@ mod tests {
 
         // 6. Локальный адрес нельзя разрешить через URL и в рабочей конфигурации.
         assert_eq!(
-            IpValidator::new(repo)
+            IpValidator::new(repo.clone())
                 .resolve_url("http://127.0.0.1:8080/upward")
                 .await,
             Err(UrlValidationError::IpInvalid)
+        );
+
+        // 7. Режим разработки с allow_private_ips -> Ok
+        let dev_validator = IpValidator::new(repo).with_allow_private_ips(true);
+        assert_eq!(
+            dev_validator.validate("127.0.0.1".parse().unwrap()).await,
+            Ok(())
+        );
+        assert_eq!(
+            dev_validator
+                .validate_url("http://127.0.0.1:8080/test")
+                .await,
+            Ok(())
         );
     }
 }
