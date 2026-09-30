@@ -24,6 +24,8 @@ async function bootstrap() {
     )
     .setVersion('0.1.0')
     .addBearerAuth()
+    .addServer('http://localhost:4000', 'BFF Gateway (Local)')
+    .addServer('/', 'Current Origin')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

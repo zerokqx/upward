@@ -5,6 +5,7 @@ use std::net::SocketAddr;
 use tracing::debug;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use tower_http::cors::CorsLayer;
 
 use crate::openapi::ApiDoc;
 use crate::{AppState, ping, site};
@@ -64,6 +65,7 @@ pub fn create_app(state: AppState) -> Router {
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
         .route("/health", get(health_check))
         .merge(protected)
+        .layer(CorsLayer::permissive())
         .layer(DefaultBodyLimit::max(16 * 1024))
         .with_state(state)
 }

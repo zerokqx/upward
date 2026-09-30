@@ -13,6 +13,10 @@
   },
   "servers": [
     {
+      "url": "http://localhost:3001",
+      "description": "Identify Service (Local)"
+    },
+    {
       "url": "/",
       "description": "Текущий экземпляр сервиса"
     }

@@ -1,5 +1,15 @@
 {
   "openapi": "3.0.0",
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "BFF Gateway (Local)"
+    },
+    {
+      "url": "/",
+      "description": "Current Origin"
+    }
+  ],
   "paths": {
     "/": {
       "get": {

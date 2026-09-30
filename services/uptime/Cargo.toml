@@ -24,3 +24,4 @@ redis = { version = "1.7.0", features = ["tokio-comp"] }
 derive_more = { version = "2.1.1", features = ["display", "from"] }
 jsonwebtoken = "9.3"
 validator = { version = "0.20", features = ["derive"] }
+tower-http = { version = "0.6", features = ["cors"] }
