@@ -4,7 +4,6 @@ use serde::Serialize;
 use std::net::SocketAddr;
 use tracing::debug;
 use utoipa::OpenApi;
-use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::openapi::ApiDoc;
@@ -63,7 +62,6 @@ pub fn create_app(state: AppState) -> Router {
 
     Router::new()
         .merge(SwaggerUi::new("/docs").url("/docs/docs.json", ApiDoc::openapi()))
-        .merge(Scalar::with_url("/scalar", ApiDoc::openapi()))
         .route("/health", get(health_check))
         .merge(protected)
         .layer(DefaultBodyLimit::max(16 * 1024))

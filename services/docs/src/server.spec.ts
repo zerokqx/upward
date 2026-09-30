@@ -77,7 +77,7 @@ describe('Docs Server API', () => {
     });
   });
 
-  describe('Scalar UI HTML routes', () => {
+  describe('Swagger UI HTML routes', () => {
     it('should return 200 and HTML on root /', async () => {
       const res = await app.inject({
         method: 'GET',
@@ -85,37 +85,37 @@ describe('Docs Server API', () => {
       });
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('Scalar');
+      expect(res.body).toContain('swagger-ui');
     });
 
-    it('should return 200 and HTML on /bff/', async () => {
+    it('should return 200 and HTML on /bff', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/bff/',
+        url: '/bff',
       });
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('Scalar');
+      expect(res.body).toContain('swagger-ui');
     });
 
-    it('should return 200 and HTML on /uptime/', async () => {
+    it('should return 200 and HTML on /uptime', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/uptime/',
+        url: '/uptime',
       });
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('Scalar');
+      expect(res.body).toContain('swagger-ui');
     });
 
-    it('should return 200 and HTML on /identify/', async () => {
+    it('should return 200 and HTML on /identify', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/identify/',
+        url: '/identify',
       });
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('Scalar');
+      expect(res.body).toContain('swagger-ui');
     });
   });
 });
