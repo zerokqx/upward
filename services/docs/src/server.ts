@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import { getAllSpecs, fetchOrFallbackSpec, SERVICES } from './specs.js';
+import { fetchOrFallbackSpec, SERVICES } from './specs.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const fastify = Fastify({
@@ -28,90 +28,35 @@ export async function buildServer(): Promise<FastifyInstance> {
     return { status: 'ok', service: 'docs', timestamp: new Date().toISOString() };
   });
 
-  // Raw JSON specification endpoints
-  fastify.get('/specs/bff.json', async (_req, reply) => {
-    const spec = await fetchOrFallbackSpec(SERVICES[0]);
-    return reply.type('application/json').send(spec);
-  });
-
-  fastify.get('/specs/uptime.json', async (_req, reply) => {
-    const spec = await fetchOrFallbackSpec(SERVICES[1]);
-    return reply.type('application/json').send(spec);
-  });
-
-  fastify.get('/specs/identify.json', async (_req, reply) => {
-    const spec = await fetchOrFallbackSpec(SERVICES[2]);
-    return reply.type('application/json').send(spec);
-  });
-
-  fastify.get('/specs/combined.json', async (_req, reply) => {
-    const { combined } = await getAllSpecs();
-    return reply.type('application/json').send(combined);
-  });
-
-  // Dedicated Swagger UI documentation for BFF
-  await fastify.register(async (scope) => {
-    await scope.register(fastifySwaggerUi, {
-      routePrefix: '/bff',
-      theme: {
-        title: 'BFF Service API Documentation',
-      },
-      uiConfig: {
-        url: '/specs/bff.json',
-        docExpansion: 'list',
-        deepLinking: true,
-      },
+  // Raw JSON specification endpoints for each service
+  for (const service of SERVICES) {
+    fastify.get(`/specs/${service.id}.json`, async (_req, reply) => {
+      const spec = await fetchOrFallbackSpec(service);
+      return reply.type('application/json').send(spec);
     });
-  });
+  }
 
-  // Dedicated Swagger UI documentation for Uptime
-  await fastify.register(async (scope) => {
-    await scope.register(fastifySwaggerUi, {
-      routePrefix: '/uptime',
-      theme: {
-        title: 'Uptime Service API Documentation',
-      },
-      uiConfig: {
-        url: '/specs/uptime.json',
-        docExpansion: 'list',
-        deepLinking: true,
-      },
+  // Quick redirects to service in Swagger UI
+  for (const service of SERVICES) {
+    fastify.get(`/${service.id}`, async (_req, reply) => {
+      return reply.redirect(`/?url=/specs/${service.id}.json`);
     });
-  });
+  }
 
-  // Dedicated Swagger UI documentation for Identify
-  await fastify.register(async (scope) => {
-    await scope.register(fastifySwaggerUi, {
-      routePrefix: '/identify',
-      theme: {
-        title: 'Identify Service API Documentation',
-      },
-      uiConfig: {
-        url: '/specs/identify.json',
-        docExpansion: 'list',
-        deepLinking: true,
-      },
-    });
-  });
-
-  // Main Unified Portal at root `/` with multi-spec dropdown
-  await fastify.register(async (scope) => {
-    await scope.register(fastifySwaggerUi, {
-      routePrefix: '/',
-      theme: {
-        title: 'Upward Developer Documentation Portal',
-      },
-      uiConfig: {
-        urls: [
-          { name: '1. Combined Platform API (All Services)', url: '/specs/combined.json' },
-          { name: '2. BFF (Client Gateway)', url: '/specs/bff.json' },
-          { name: '3. Uptime Service (Core)', url: '/specs/uptime.json' },
-          { name: '4. Identify Service (Auth)', url: '/specs/identify.json' },
-        ],
-        docExpansion: 'list',
-        deepLinking: true,
-      },
-    });
+  // Swagger UI Portal at root `/` with native multi-service dropdown selector
+  await fastify.register(fastifySwaggerUi, {
+    routePrefix: '/',
+    theme: {
+      title: 'Upward Platform Documentation',
+    },
+    uiConfig: {
+      urls: SERVICES.map((service) => ({
+        name: service.name,
+        url: `/specs/${service.id}.json`,
+      })),
+      docExpansion: 'list',
+      deepLinking: true,
+    },
   });
 
   return fastify;

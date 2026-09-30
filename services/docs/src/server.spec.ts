@@ -61,24 +61,10 @@ describe('Docs Server API', () => {
       expect(json.info.title).toContain('Identify');
       expect(Object.keys(json.paths).length).toBeGreaterThan(0);
     });
-
-    it('should return combined.json spec with merged paths from all services', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/specs/combined.json',
-      });
-      expect(res.statusCode).toBe(200);
-      const json = res.json();
-      expect(json.info.title).toBe('Upward Platform API (All Services)');
-      // Paths from bff, uptime, identify should all be present
-      const paths = Object.keys(json.paths);
-      expect(paths).toContain('/auth/register');
-      expect(paths).toContain('/sites');
-    });
   });
 
-  describe('Swagger UI HTML routes', () => {
-    it('should return 200 and HTML on root /', async () => {
+  describe('Swagger UI Portal and Navigation', () => {
+    it('should return 200 and Swagger UI HTML on root /', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/',
@@ -88,34 +74,31 @@ describe('Docs Server API', () => {
       expect(res.body).toContain('swagger-ui');
     });
 
-    it('should return 200 and HTML on /bff', async () => {
+    it('should redirect /bff to Swagger UI with BFF spec url', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/bff',
       });
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('swagger-ui');
+      expect(res.statusCode).toBe(302);
+      expect(res.headers.location).toBe('/?url=/specs/bff.json');
     });
 
-    it('should return 200 and HTML on /uptime', async () => {
+    it('should redirect /uptime to Swagger UI with Uptime spec url', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/uptime',
       });
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('swagger-ui');
+      expect(res.statusCode).toBe(302);
+      expect(res.headers.location).toBe('/?url=/specs/uptime.json');
     });
 
-    it('should return 200 and HTML on /identify', async () => {
+    it('should redirect /identify to Swagger UI with Identify spec url', async () => {
       const res = await app.inject({
         method: 'GET',
         url: '/identify',
       });
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toContain('text/html');
-      expect(res.body).toContain('swagger-ui');
+      expect(res.statusCode).toBe(302);
+      expect(res.headers.location).toBe('/?url=/specs/identify.json');
     });
   });
 });
