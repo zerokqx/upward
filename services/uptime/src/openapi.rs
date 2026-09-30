@@ -1,4 +1,25 @@
+use utoipa::Modify;
 use utoipa::OpenApi;
+use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearerAuth",
+                SecurityScheme::Http(
+                    HttpBuilder::new()
+                        .scheme(HttpAuthScheme::Bearer)
+                        .bearer_format("JWT")
+                        .description(Some("Access token (RS256 JWT)"))
+                        .build(),
+                ),
+            );
+        }
+    }
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -17,6 +38,7 @@ use utoipa::OpenApi;
         (url = "http://localhost:3000", description = "Локальный инстанс сервиса"),
         (url = "/", description = "Текущий хост")
     ),
+    modifiers(&SecurityAddon),
     paths(
         crate::server::health_check,
         crate::site::controller::create_site,

@@ -13,6 +13,9 @@ use crate::domain::{SiteId, UserId};
     get,
     path = "/sites/{site_id}/pings",
     tag = "Pings",
+    security(
+        ("bearerAuth" = [])
+    ),
     params(
         ("site_id" = uuid::Uuid, Path, description = "Идентификатор сайта"),
         GetPingsDto
@@ -22,6 +25,14 @@ use crate::domain::{SiteId, UserId};
             status = 200,
             description = "История проверок доступности сайта за последние 30 дней",
             body = Vec<PingRecord>
+        ),
+        (
+            status = 401,
+            description = "Требуется авторизация (Bearer JWT токен)"
+        ),
+        (
+            status = 403,
+            description = "Идентификатор пользователя не совпадает с токеном"
         ),
         (
             status = 500,

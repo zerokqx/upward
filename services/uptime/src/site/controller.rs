@@ -209,6 +209,9 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
     post,
     path = "/sites",
     tag = "Sites",
+    security(
+        ("bearerAuth" = [])
+    ),
     request_body(
         content = CreateSiteDto,
         description = "Данные для регистрации сайта в системе мониторинга",
@@ -234,6 +237,10 @@ fn map_url_validation_error_to_response(err: UrlValidationError) -> (StatusCode,
             description = "Некорректный запрос: невалидный URL, неподдерживаемая схема или ошибка DNS-резолвинга",
             body = String,
             example = json!("Only http and https schemes are allowed")
+        ),
+        (
+            status = 401,
+            description = "Требуется авторизация (Bearer JWT токен)"
         ),
         (
             status = 403,
@@ -308,6 +315,9 @@ pub async fn create_site(
     get,
     path = "/sites/{user_id}",
     tag = "Sites",
+    security(
+        ("bearerAuth" = [])
+    ),
     params(
         ("user_id" = String, Path, description = "Идентификатор пользователя-владельца сайтов", example = "usr_01J8ABCDEF1234567890")
     ),
@@ -331,6 +341,14 @@ pub async fn create_site(
                     }
                 }
             ])
+        ),
+        (
+            status = 401,
+            description = "Требуется авторизация (Bearer JWT токен)"
+        ),
+        (
+            status = 403,
+            description = "Идентификатор пользователя не совпадает с токеном"
         ),
         (
             status = 500,
@@ -366,6 +384,9 @@ pub async fn get_all_sites(
     post,
     path = "/sites/{site_id}/verify",
     tag = "Sites",
+    security(
+        ("bearerAuth" = [])
+    ),
     params(
         ("site_id" = String, Path, description = "Идентификатор подтверждаемого сайта", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
     ),
@@ -381,6 +402,14 @@ pub async fn get_all_sites(
             description = "Некорректный запрос: токен не совпадает, челендж протух или некорректный ответ сайта",
             body = String,
             example = json!("Challenge token mismatch or expired")
+        ),
+        (
+            status = 401,
+            description = "Требуется авторизация (Bearer JWT токен)"
+        ),
+        (
+            status = 403,
+            description = "Пользователь не является владельцем сайта"
         ),
         (
             status = 404,
