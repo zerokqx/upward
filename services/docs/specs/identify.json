@@ -1,0 +1,358 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Upward Identify Service API",
+    "description": "REST API сервиса идентификации и аутентификации в монорепозитории Upward.\n\n### Возможности сервиса:\n- Аутентификация по email и паролю (Argon2id)\n- Выпуск пар токенов Access (JWT) и Refresh\n- Безопасная ротация Refresh токенов (Token Rotation) с хранением активных сессий в Redis\n- Интеграция с OAuth провайдерами (Google и др.)\n- Проверка работоспособности сервиса (Health Check)",
+    "contact": {
+      "name": "Upward Team"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Текущий экземпляр сервиса"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Проверка работоспособности сервиса (Health Check)",
+        "description": "Возвращает текущее состояние доступности микросервиса.\nИспользуется оркестратором (Docker, Kubernetes) для liveness и readiness проб.",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "Сервис успешно запущен и обрабатывает запросы",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                },
+                "example": {
+                  "message": "Identify service is running",
+                  "status": "ok"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/keys/public": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Получение открытого ключа (RSA Public Key) для локальной верификации JWT в микросервисах",
+        "operationId": "get_public_key",
+        "responses": {
+          "200": {
+            "description": "Открытый ключ сервиса в формате JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicKeyResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/keys/public.pem": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Получение открытого ключа (RSA Public Key) напрямую в формате raw PEM",
+        "operationId": "get_public_key_raw",
+        "responses": {
+          "200": {
+            "description": "Файл публичного ключа в формате PEM",
+            "content": {
+              "application/x-pem-file": {}
+            }
+          }
+        }
+      }
+    },
+    "/login/password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Аутентификация по email и паролю",
+        "description": "Проверяет учетные данные пользователя (email и пароль), сверяет хеш Argon2\nи при успехе возвращает пару Access (JWT) и Refresh токенов.",
+        "operationId": "login_by_password",
+        "requestBody": {
+          "description": "Учетные данные пользователя для входа",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginByPasswordRequestDto"
+              },
+              "example": {
+                "email": "user@example.com",
+                "password": "strongpassword123"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Успешная аутентификация",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginByPasswordResponseDto"
+                },
+                "example": {
+                  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "refresh": "1024ad10-4b6d-490c-a55d-ed70dcbe4f84"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Учетная запись зарегистрирована через OAuth и не имеет пароля"
+          },
+          "401": {
+            "description": "Неверный пароль"
+          },
+          "404": {
+            "description": "Пользователь с указанным email не найден"
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера"
+          }
+        }
+      }
+    },
+    "/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Обновление пары токенов (Refresh Token Rotation)",
+        "description": "Принимает текущий Refresh токен, проверяет его наличие в Redis,\nсжигает использованный токен и выпускает новую пару (Access + Refresh).",
+        "operationId": "refresh",
+        "requestBody": {
+          "description": "Текущий активный Refresh токен",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequestDto"
+              },
+              "example": {
+                "refresh": "1024ad10-4b6d-490c-a55d-ed70dcbe4f84"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Токены успешно обновлены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginByPasswordResponseDto"
+                },
+                "example": {
+                  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "refresh": "3209edde-f535-4d07-815e-7070c59e0a37"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Невалидный, протухший или повторно использованный Refresh токен"
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера"
+          }
+        }
+      }
+    },
+    "/register/password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Регистрация нового пользователя по email и паролю",
+        "operationId": "register_by_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Пользователь успешно зарегистрирован"
+          },
+          "409": {
+            "description": "Пользователь с таким email уже существует"
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccessToken": {
+        "type": "string",
+        "description": "Newtype для Access JWT токена",
+        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      },
+      "HealthResponseDto": {
+        "type": "object",
+        "description": "Ответ эндпоинта проверки работоспособности сервиса",
+        "required": [
+          "status",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Пояснительное сообщение",
+            "example": "Identify service is running"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус состояния сервиса",
+            "example": "ok"
+          }
+        }
+      },
+      "LoginByPasswordRequestDto": {
+        "type": "object",
+        "description": "Запрос на аутентификацию по email и паролю",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Адрес электронной почты пользователя",
+            "example": "user@example.com",
+            "maxLength": 320
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль пользователя в открытом виде",
+            "example": "strongpassword123",
+            "maxLength": 128,
+            "minLength": 8
+          }
+        }
+      },
+      "LoginByPasswordResponseDto": {
+        "type": "object",
+        "description": "Успешный ответ аутентификации с парой токенов",
+        "required": [
+          "access",
+          "refresh"
+        ],
+        "properties": {
+          "access": {
+            "$ref": "#/components/schemas/AccessToken",
+            "description": "Короткоживущий JWT токен доступа (15 минут)"
+          },
+          "refresh": {
+            "$ref": "#/components/schemas/RefreshToken",
+            "description": "Долгоживущий одноразовый Refresh токен для ротации (30 дней)"
+          }
+        }
+      },
+      "PublicKeyResponseDto": {
+        "type": "object",
+        "description": "Ответ с открытым криптографическим ключом для валидации токенов",
+        "required": [
+          "algorithm",
+          "public_key"
+        ],
+        "properties": {
+          "algorithm": {
+            "type": "string",
+            "description": "Алгоритм цифровой подписи токенов",
+            "example": "RS256"
+          },
+          "public_key": {
+            "type": "string",
+            "description": "Публичный ключ RSA в формате PEM (X.509 SubjectPublicKeyInfo)",
+            "example": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----"
+          }
+        }
+      },
+      "RefreshRequestDto": {
+        "type": "object",
+        "description": "Запрос на обновление пары токенов (Refresh Token Rotation)",
+        "required": [
+          "refresh"
+        ],
+        "properties": {
+          "refresh": {
+            "$ref": "#/components/schemas/RefreshToken",
+            "description": "Текущий активный Refresh токен"
+          }
+        }
+      },
+      "RefreshToken": {
+        "type": "string",
+        "description": "Newtype для Refresh токена",
+        "example": "1024ad10-4b6d-490c-a55d-ed70dcbe4f84"
+      },
+      "RegisterRequestDto": {
+        "type": "object",
+        "description": "Запрос на регистрацию пользователя по email и паролю",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Адрес электронной почты пользователя",
+            "example": "newuser@example.com",
+            "maxLength": 320
+          },
+          "password": {
+            "type": "string",
+            "description": "Пароль пользователя в открытом виде",
+            "example": "strongpassword123",
+            "maxLength": 128,
+            "minLength": 8
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Проверка состояния и доступности микросервиса"
+    },
+    {
+      "name": "Auth",
+      "description": "Аутентификация, выпуск и ротация токенов доступа"
+    }
+  ]
+}

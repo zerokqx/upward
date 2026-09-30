@@ -1,0 +1,392 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Пользователь успешно зарегистрирован"
+          },
+          "400": {
+            "description": "Невалидные входные данные"
+          },
+          "409": {
+            "description": "Пользователь с таким email уже существует"
+          }
+        },
+        "summary": "Регистрация нового пользователя по email и паролю",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешная аутентификация, возвращены Access и Refresh токены"
+          },
+          "400": {
+            "description": "Невалидные учетные данные"
+          },
+          "401": {
+            "description": "Неверный пароль"
+          },
+          "404": {
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Аутентификация по email и паролю",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Токены успешно обновлены"
+          },
+          "401": {
+            "description": "Невалидный или протухший Refresh токен"
+          }
+        },
+        "summary": "Обновление пары токенов по Refresh токену (Token Rotation)",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/google": {
+      "get": {
+        "operationId": "AuthController_googleLogin",
+        "parameters": [],
+        "responses": {
+          "302": {
+            "description": "Редирект на страницу согласия Google"
+          }
+        },
+        "summary": "Инициация входа через Google OAuth",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/google/callback": {
+      "get": {
+        "operationId": "AuthController_googleCallback",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успешная аутентификация через Google"
+          }
+        },
+        "summary": "OAuth Callback для завершения входа через Google",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Данные текущего пользователя"
+          },
+          "401": {
+            "description": "Пользователь не авторизован"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Получение профиля текущего авторизованного пользователя",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/sites": {
+      "post": {
+        "operationId": "SitesController_createSite",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSiteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Сайт успешно зарегистрирован"
+          },
+          "400": {
+            "description": "Невалидный URL или ошибка DNS-резолвинга"
+          },
+          "401": {
+            "description": "Пользователь не авторизован"
+          },
+          "403": {
+            "description": "Запрещено: IP является приватным или заблокирован"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Регистрация нового сайта для мониторинга",
+        "tags": [
+          "Sites"
+        ]
+      },
+      "get": {
+        "operationId": "SitesController_getAllSites",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Список сайтов пользователя"
+          },
+          "401": {
+            "description": "Пользователь не авторизован"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Получить список отслеживаемых сайтов текущего пользователя",
+        "tags": [
+          "Sites"
+        ]
+      }
+    },
+    "/sites/{id}/verify": {
+      "post": {
+        "operationId": "SitesController_verifySite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Владение сайтом успешно подтверждено"
+          },
+          "400": {
+            "description": "Токен не совпадает или некорректный ответ сайта"
+          },
+          "401": {
+            "description": "Пользователь не авторизован"
+          },
+          "404": {
+            "description": "Сайт не найден"
+          },
+          "502": {
+            "description": "Ошибка связи с целевым сайтом"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Подтвердить владение сайтом через HTTP-01 Challenge",
+        "tags": [
+          "Sites"
+        ]
+      }
+    },
+    "/sites/{id}/pings": {
+      "get": {
+        "operationId": "SitesController_getPings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "История замеров доступности за последние 30 дней"
+          },
+          "401": {
+            "description": "Пользователь не авторизован"
+          },
+          "404": {
+            "description": "Сайт не найден"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "История замеров доступности сайта",
+        "tags": [
+          "Sites"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Upward BFF API",
+    "description": "Backend-For-Frontend API для веб- и мобильных клиентов Upward",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "description": "Email пользователя"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Пароль учетной записи (от 8 до 128 символов)"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "description": "Email пользователя"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Пароль пользователя"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshDto": {
+        "type": "object",
+        "properties": {
+          "refresh": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Refresh токен сессии (UUID v4)"
+          }
+        },
+        "required": [
+          "refresh"
+        ]
+      },
+      "CreateSiteDto": {
+        "type": "object",
+        "properties": {
+          "site": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "URL сайта для проверки (поддерживаются протоколы http:// и https://)"
+          }
+        },
+        "required": [
+          "site"
+        ]
+      }
+    }
+  }
+}

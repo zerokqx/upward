@@ -1,0 +1,546 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Upward Uptime Service API",
+    "description": "REST API сервиса мониторинга доступности сайтов (uptime) в монорепозитории Upward.\n\n### Возможности сервиса:\n- Регистрация сайтов для периодического мониторинга доступности\n- Защита от SSRF (DNS-резолвинг, фильтрация приватных/локальных сетей и проверка по списку запрещённых IP)\n- Фоновый параллельный опрос сайтов с записью метрик в TimescaleDB\n- Получение списка отслеживаемых сайтов и метаданных последних проверок\n- Проверка работоспособности сервиса (Liveness/Readiness probe)",
+    "contact": {
+      "name": "Upward Team"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Текущий экземпляр сервиса"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Проверка работоспособности сервиса (Health Check)",
+        "description": "Возвращает текущее состояние доступности микросервиса.\nИспользуется оркестратором (Docker, Kubernetes) для liveness и readiness проб.",
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "Сервис успешно запущен и обрабатывает запросы",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponseDto"
+                },
+                "example": {
+                  "message": "Uptime monitoring service is running",
+                  "status": "ok"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sites": {
+      "post": {
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Добавить новый сайт в мониторинг",
+        "description": "Регистрирует URL сайта для периодической проверки доступности.\nВыполняет DNS-резолвинг и проверяет, что целевой IP-адрес не является приватным,\nлокальным (loopback) или заблокированным в таблице `forbidden_ip`.",
+        "operationId": "create_site",
+        "requestBody": {
+          "description": "Данные для регистрации сайта в системе мониторинга",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSiteDto"
+              },
+              "example": {
+                "site": "https://example.com",
+                "user_id": "usr_01J8ABCDEF1234567890"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Сайт успешно добавлен в систему мониторинга",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSiteResponseDto"
+                },
+                "example": {
+                  "challenge_path": "/upward",
+                  "challenge_token": "b428d082-356a-4b92-808c-901a1e582845",
+                  "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                  "status": "pending_verification"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос: невалидный URL, неподдерживаемая схема или ошибка DNS-резолвинга",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Only http and https schemes are allowed"
+              }
+            }
+          },
+          "403": {
+            "description": "Запрещено: целевой IP является приватным, локальным или заблокирован",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Private, loopback or local IPs are not allowed"
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера или базы данных",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Failed to save site: database error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sites/{site_id}/pings": {
+      "get": {
+        "tags": [
+          "Pings"
+        ],
+        "operationId": "get_pings",
+        "parameters": [
+          {
+            "name": "site_id",
+            "in": "path",
+            "description": "Идентификатор сайта",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Идентификатор пользователя-владельца (извлекается BFF из JWT)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "example": "usr_01J8ABCDEF1234567890"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "История проверок доступности сайта за последние 30 дней",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PingRecord"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера при чтении из базы данных",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sites/{site_id}/verify": {
+      "post": {
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Подтвердить владение сайтом через HTTP-01 Challenge",
+        "description": "Обращается по адресу {site.url}/upward. Ответ должен быть JSON-объектом\nс полем `challenge_token`, совпадающим с ожидаемым токеном из Redis.",
+        "operationId": "verify_site",
+        "parameters": [
+          {
+            "name": "site_id",
+            "in": "path",
+            "description": "Идентификатор подтверждаемого сайта",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Владение сайтом успешно подтверждено, сайт активирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifySiteResponseDto"
+                },
+                "example": {
+                  "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                  "status": "verified"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос: токен не совпадает, челендж протух или некорректный ответ сайта",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Challenge token mismatch or expired"
+              }
+            }
+          },
+          "404": {
+            "description": "Сайт не найден",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Site not found"
+              }
+            }
+          },
+          "502": {
+            "description": "Ошибка связи с целевым сайтом",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Failed to reach challenge URL: connection refused"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sites/{user_id}": {
+      "get": {
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Получить список отслеживаемых сайтов пользователя",
+        "description": "Возвращает список всех зарегистрированных сайтов конкретного пользователя вместе со статусом и доп. данными последней проверки доступности.",
+        "operationId": "get_all_sites",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "description": "Идентификатор пользователя-владельца сайтов",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "usr_01J8ABCDEF1234567890"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список отслеживаемых сайтов с последним статусом проверки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteResponseDto"
+                  }
+                },
+                "example": [
+                  {
+                    "created_at": "2026-09-15T12:00:00Z",
+                    "extra": {
+                      "duration_ms": 142.5,
+                      "status_code": 200
+                    },
+                    "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+                    "last_check": "2026-09-15T12:05:00Z",
+                    "status": "idle",
+                    "status_updated_at": "2026-09-15T12:05:00Z",
+                    "url": "https://example.com",
+                    "user_id": "usr_01J8ABCDEF1234567890"
+                  }
+                ]
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера при чтении из базы данных",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Database query error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateSiteDto": {
+        "type": "object",
+        "description": "Данные для регистрации нового сайта в мониторинге",
+        "required": [
+          "user_id",
+          "site"
+        ],
+        "properties": {
+          "site": {
+            "type": "string",
+            "description": "URL сайта для проверки (поддерживаются только http:// и https://)",
+            "example": "https://example.com",
+            "maxLength": 2048,
+            "minLength": 1
+          },
+          "user_id": {
+            "type": "string",
+            "description": "Идентификатор пользователя-владельца",
+            "example": "usr_01J8ABCDEF1234567890",
+            "maxLength": 128,
+            "minLength": 1
+          }
+        }
+      },
+      "CreateSiteResponseDto": {
+        "type": "object",
+        "description": "Результат успешного создания сайта",
+        "required": [
+          "id",
+          "status",
+          "challenge_token",
+          "challenge_path"
+        ],
+        "properties": {
+          "challenge_path": {
+            "type": "string",
+            "description": "Путь, по которому должен быть доступен токен",
+            "example": "/upward"
+          },
+          "challenge_token": {
+            "type": "string",
+            "description": "Секретный токен для подтверждения владения сайтом",
+            "example": "b428d082-356a-4b92-808c-901a1e582845"
+          },
+          "id": {
+            "type": "string",
+            "description": "Идентификатор созданного сайта",
+            "example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус операции",
+            "example": "pending_verification"
+          }
+        }
+      },
+      "GetPingsDto": {
+        "type": "object",
+        "description": "DTO query-параметров для получения пингов сайта",
+        "required": [
+          "user_id"
+        ],
+        "properties": {
+          "user_id": {
+            "$ref": "#/components/schemas/UserId",
+            "description": "Идентификатор пользователя-владельца (извлекается BFF из JWT)"
+          }
+        }
+      },
+      "HealthResponseDto": {
+        "type": "object",
+        "description": "Ответ эндпоинта проверки работоспособности сервиса",
+        "required": [
+          "status",
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Пояснительное сообщение",
+            "example": "Uptime monitoring service is running"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус состояния сервиса",
+            "example": "ok"
+          }
+        }
+      },
+      "PingRecord": {
+        "type": "object",
+        "description": "Запись замера доступности, подготовленная для сохранения в базу данных",
+        "required": [
+          "site_id",
+          "duration_ms",
+          "extra"
+        ],
+        "properties": {
+          "duration_ms": {
+            "type": "number",
+            "format": "double"
+          },
+          "extra": {},
+          "site_id": {
+            "$ref": "#/components/schemas/SiteId"
+          }
+        }
+      },
+      "SiteId": {
+        "type": "string",
+        "format": "uuid",
+        "description": "Идентификатор сайта"
+      },
+      "SiteResponseDto": {
+        "type": "object",
+        "description": "Информация о сайте и статусе его последней проверки (API Response Contract)",
+        "required": [
+          "id",
+          "user_id",
+          "url",
+          "created_at",
+          "status",
+          "status_updated_at",
+          "active"
+        ],
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "description": "Признак подтверждения и активности сайта",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время добавления сайта (UTC)",
+            "example": "2026-09-15T12:00:00Z"
+          },
+          "extra": {
+            "description": "Дополнительные данные последней проверки (время отклика, заголовки, ошибки)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Идентификатор сайта",
+            "example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+          },
+          "last_check": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Время последней проверки (UTC)",
+            "example": "2026-09-15T12:05:00Z"
+          },
+          "status": {
+            "type": "string",
+            "description": "Текущий статус сайта в очереди (idle, processing)",
+            "example": "idle"
+          },
+          "status_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время обновления статуса (UTC)",
+            "example": "2026-09-15T12:05:00Z"
+          },
+          "url": {
+            "type": "string",
+            "description": "Отслеживаемый URL",
+            "example": "https://example.com"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "Идентификатор пользователя-владельца",
+            "example": "usr_01J8ABCDEF1234567890"
+          }
+        }
+      },
+      "SiteStatus": {
+        "type": "string",
+        "description": "Статус состояния сайта в очереди мониторинга",
+        "enum": [
+          "idle",
+          "processing"
+        ]
+      },
+      "SiteUrl": {
+        "type": "string",
+        "description": "URL сайта"
+      },
+      "UserId": {
+        "type": "string",
+        "description": "Идентификатор пользователя-владельца"
+      },
+      "VerifySiteResponseDto": {
+        "type": "object",
+        "description": "Результат подтверждения владения сайтом",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор подтвержденного сайта",
+            "example": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус операции",
+            "example": "verified"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Проверка состояния и доступности микросервиса"
+    },
+    {
+      "name": "Sites",
+      "description": "Регистрация целевых сайтов и получение статусов проверок"
+    },
+    {
+      "name": "Pings",
+      "description": "История и результаты проверок доступности"
+    }
+  ]
+}

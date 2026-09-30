@@ -45,3 +45,14 @@ use utoipa::OpenApi;
     )
 )]
 pub struct ApiDoc;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_export_openapi() {
+        let json = ApiDoc::openapi().to_pretty_json().unwrap();
+        let _ = std::fs::write("../docs/specs/uptime.json", json);
+    }
+}

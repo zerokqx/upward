@@ -184,7 +184,9 @@ mod tests {
         assert!(Argon2::default().verify_password(b"wrongpass", &parsed_hash).is_err());
 
         // Проверяем JWT
-        let jwt_service = JwtService::new("test_secret".to_string());
+        let priv_key = include_str!("../certs/private.pem");
+        let pub_key = include_str!("../certs/public.pem");
+        let jwt_service = JwtService::new(priv_key, pub_key).unwrap();
         let user_id = Uuid::new_v4();
         let token = jwt_service
             .generate_access_token(user_id, "test@example.com")
