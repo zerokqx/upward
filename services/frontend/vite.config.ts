@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
@@ -8,10 +7,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '#': fileURLToPath(new URL('./src', import.meta.url)),
-    },
+    tsconfigPaths: true,
+  },
+  server: {
+    host: '0.0.0.0',
   },
 
   plugins: [
