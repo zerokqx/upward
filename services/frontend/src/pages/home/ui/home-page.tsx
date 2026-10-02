@@ -1,10 +1,15 @@
+import { Hero } from '@/widgets/hero'
+import { NextSteps } from '@/widgets/next-steps'
+import { Spacer, Ticks } from '@/shared/ui'
+
 export function HomePage() {
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold">Welcome to Upward</h1>
-      <p className="mt-4 text-lg">
-        Edit <code>src/routes/index.tsx</code> to get started.
-      </p>
-    </div>
+    <>
+      <Hero />
+      <Ticks />
+      <NextSteps />
+      <Ticks />
+      <Spacer />
+    </>
   )
 }
