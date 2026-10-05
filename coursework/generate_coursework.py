@@ -203,7 +203,7 @@ def render_comparison_table():
         ["Среднее время обнаружения аварии (MTTD)", "20–50 минут (часто по звонкам или жалобам пользователей)", "5–10 секунд (мгновенная фиксация сетевого таймаута)"],
         ["Масштабируемость (емкость узлов)", "До 50–100 хостов (исчерпание дескрипторов ОС и памяти)", "Свыше 10 000 хостов на один инстанс сервиса (Tokio/epoll)"],
         ["Защита от атак SSRF", "Отсутствует (cURL опрашивает любые введенные адреса)", "Многоуровневый фильтр (RFC 1918, loopback, forbidden_ip)"],
-        ["Верификация прав на ресурс", "Отсутствует (риск нелегитимного сканирования)", "Протокол HTTP-01 Challenge с сохранением ключей в Redis"],
+        ["Верификация прав на ресурс", "Отсутствует (риск нелегитимного сканирования)", "Криптографическая верификация владения по пути /upward, сбор виджетов"],
         ["Хранение и глубина аналитики метрик", "Разрозненные текстовые лог-файлы, фрагменты в Excel", "Гипертаблицы TimescaleDB с глубиной 30 дней и авто-ротацией"],
         ["Точность замера задержки (RTT)", "Низкая (искажения из-за форка cURL и нагрузки ОС)", "Субмикросекундная точность языка Rust без пауз GC"],
         ["Трудозатраты дежурного SRE-персонала", "Высокие (до 30% рабочего времени на рутину)", "Минимальные (реагирование на автоматические алерты)"]
@@ -236,16 +236,20 @@ def render_table_3():
 
 def render_table_4():
     headers = ["№", "Входные данные", "Вводимое значение", "Ожидаемая реакция программы", "Фактическая реакция программы", "Ошибка"]
-    col_widths = ["0.8cm", "3.2cm", "3.6cm", "4.0cm", "3.9cm", "1.5cm"]
+    col_widths = ["0.8cm", "3.1cm", "3.5cm", "4.1cm", "4.0cm", "1.5cm"]
     center_cols = [0, 5]
     rows = [
-        ["1", "POST /sites (Корректный URL)", "user_id: usr_01, site: https://yandex.ru", "HTTP 201 Created, pending_verification", "HTTP 201 Created, токен в Redis", "Нет"],
-        ["2", "POST /sites (Схема ftp://)", "user_id: usr_01, site: ftp://google.com", "HTTP 400 Bad Request, сообщение схемы", "HTTP 400 Bad Request, схема отклонена", "Нет"],
-        ["3", "POST /sites (SSRF на 127.0.0.1)", "user_id: usr_01, site: http://127.0.0.1:8080", "HTTP 403 Forbidden, Private IP not allowed", "HTTP 403 Forbidden, заблокировано", "Нет"],
-        ["4", "POST /sites (Черный список IP)", "user_id: usr_01, site: https://malicious.org", "HTTP 403 Forbidden, IP is in forbidden list", "HTTP 403 Forbidden, отсечено по БД", "Нет"],
-        ["5", "POST /sites/{id}/verify", "site_id, токен /.well-known/upward", "HTTP 200 OK, active = true", "HTTP 200 OK, сайт активирован", "Нет"],
-        ["6", "GET /health (Liveness проба)", "Запрос без параметров", "HTTP 200 OK, status: ok", "HTTP 200 OK, сервис в норме", "Нет"],
-        ["7", "Фоновый опрос (Стресс-тест)", "batch_size=500, concurrency=25", "Опрос ровно по 25 сокетов, Batch Insert", "Выполнен за 1.8 с, без утечек дескрипторов", "Нет"]
+        ["1", "POST /sites (Корректный URL)", "user_id: usr_01, url: https://yandex.ru", "HTTP 201 Created, pending_verification", "HTTP 201 Created, токен владения в Redis", "Нет"],
+        ["2", "POST /sites (Схема ftp://)", "user_id: usr_01, url: ftp://google.com", "HTTP 400 Bad Request, сообщение схемы", "HTTP 400 Bad Request, схема отклонена", "Нет"],
+        ["3", "POST /sites (SSRF на 127.0.0.1)", "user_id: usr_01, url: http://127.0.0.1:8080", "HTTP 403 Forbidden, Private IP not allowed", "HTTP 403 Forbidden, loopback заблокирован", "Нет"],
+        ["4", "POST /sites (Черный список IP)", "user_id: usr_01, url: https://malicious.org", "HTTP 403 Forbidden, IP is in forbidden list", "HTTP 403 Forbidden, отсечено по forbidden_ip", "Нет"],
+        ["5", "POST /sites/{id}/verify (Владение)", "site_id, токен по пути /upward", "HTTP 200 OK, active = true", "HTTP 200 OK, сайт активирован в PostgreSQL", "Нет"],
+        ["6", "Опрос /upward с UI-виджетами", "JSON с виджетами badge, stat, gauge", "HTTP 200 OK, сохранение JSONB в site_pings.extra", "HTTP 200 OK, виджеты сохранены в БД", "Нет"],
+        ["7", "Опрос /upward с невалидным виджетом", "JSON с типом unsupported_3d_mesh", "Отклонение с ошибкой UnknownWidgetType", "Ошибка зафиксирована, вредоносный JSON отсечен", "Нет"],
+        ["8", "Опрос узла с телом свыше 512 КБ", "Потоковый ответ chunked размером 1.2 МБ", "Прерывание с ошибкой PayloadTooLarge", "Соединение разорвано на 512 КБ, ОЗУ защищено", "Нет"],
+        ["9", "POST /auth/login и /auth/refresh", "Логин и последующая ротация токена", "RS256 JWT, сжигание старого через GETDEL", "Токен обновлен, старый токен отозван (401)", "Нет"],
+        ["10", "GET /health (Liveness проба)", "Запрос без параметров", "HTTP 200 OK, status: ok", "HTTP 200 OK, подтверждение доступности БД и Redis", "Нет"],
+        ["11", "Фоновый опрос (Стресс-тест)", "batch_size=500, concurrency=25", "Опрос 25 сокетов Tokio, пакетная вставка", "Завершено за 1.8 с, потребление ОЗУ <35 МБ", "Нет"]
     ]
     return build_odt_table("Table4", headers, rows, col_widths=col_widths, center_cols=center_cols)
 
@@ -254,17 +258,18 @@ def render_table_5():
     col_widths = ["3.8cm", "3.0cm", "7.2cm", "3.0cm"]
     center_cols = [1, 3]
     rows = [
-        ["devenv.nix, devenv.yaml", "Nix / Devenv", "Декларативное описание изолированной среды разработки (Rust 1.80+, Node.js 20+, pnpm, OCaml, Moonrepo, SQLx CLI)", "Единая среда сборки"],
-        [".moon/ (workspace.yml)", "Moonrepo", "Конфигурация монорепозитория, пайплайнов сборки, линтинга, тестирования и кэширования артефактов", "Оркестратор задач"],
-        ["services/uptime/src/main.rs", "Rust, Tokio", "Точка входа ядра мониторинга: запуск HTTP-сервера Axum и непрерывного фонового конвейера опроса", "Управление воркерами"],
-        ["services/uptime/src/domain.rs", "Rust (Newtypes)", "Строго типизированные структуры предметной области: SiteId, UserId, SiteUrl, SiteStatus", "Доменная модель"],
-        ["services/uptime/src/site/", "Rust, Axum, SQLx", "Модуль управления сайтами: REST API регистрации, верификация владения HTTP-01 Challenge, выборка батчей", "Реестр и верификация"],
-        ["services/uptime/src/ping/", "Rust, Axum, SQLx", "Модуль зондирования: выполнение проверок, замер сетевой задержки (RTT), получение исторических выборок", "Сбор телеметрии"],
-        ["services/uptime/src/infrastructure.rs", "Rust, Reqwest", "Клиент асинхронного сетевого зондирования, многоуровневый фильтр SSRF (RFC 1918, loopback, БД)", "Сетевой клиент и защита"],
-        ["services/uptime/migrations/", "SQL, SQLx CLI", "Идемпотентные миграции БД: таблицы sites, forbidden_ip и гипертаблица site_pings", "Схема TimescaleDB"],
-        ["services/uptime/compose.infra.yml", "Docker Compose", "Контейнеризация локальных сервисов хранения данных: TimescaleDB (Postgres 16) и Redis 7", "Локальные хранилища"],
-        ["services/bff/src/", "NestJS, TypeScript", "Шлюз Backend-for-Frontend: клиентская авторизация по открытому ключу JWKS, агрегация прикладных API", "Клиентский шлюз API"],
-        ["services/identify/", "Rust, Axum (Ed25519)", "Сервис идентификации: выпуск JWT-токенов, хранение приватного ключа, трансляция JWKS для микросервисов", "Провайдер ключей и JWT"]
+        ["devenv.nix, devenv.yaml", "Nix / Devenv", "Декларативное описание изолированной среды разработки (Rust 1.80+, Node.js 20+, pnpm, Moonrepo, SQLx CLI)", "Единая среда сборки"],
+        [".moon/ (workspace.yml)", "Moonrepo", "Оркестрация задач монорепозитория, пайплайнов сборки, линтинга, тестирования и кэширования артефактов", "Оркестратор задач"],
+        ["services/frontend/", "React 19, Vite, FSD, TanStack", "Пользовательский веб-интерфейс SPA: реактивные дашборды доступности, графики задержек RTT, динамические UI-виджеты", "Клиентский веб-интерфейс"],
+        ["services/bff/", "NestJS, TypeScript, Zod 4, Orval", "Шлюз Backend-for-Frontend: валидация Zod 4, верификация RS256 JWT с кэшированием открытого ключа, Google OAuth 2.0", "Клиентский шлюз API"],
+        ["services/identify/", "Rust, Axum, SQLx, Redis", "Сервис аутентификации: выпуск RS256 JWT, хеширование паролей Argon2id, ротация refresh-токенов в Redis через GETDEL", "Провайдер ключей и JWT"],
+        ["services/uptime/src/main.rs", "Rust, Tokio, Axum", "Точка входа ядра мониторинга: запуск HTTP-сервера и непрерывного фонового конвейера опроса сокетов", "Управление воркерами"],
+        ["services/uptime/src/site/", "Rust, Axum, SQLx", "Модуль управления сайтами: REST API регистрации, верификация владения по пути /upward, выборка батчей", "Реестр и верификация"],
+        ["services/uptime/src/ping/", "Rust, Axum, SQLx", "Модуль зондирования: сбор телеметрии, замер сетевой задержки (RTT), валидация таксономии UI-виджетов", "Сбор телеметрии"],
+        ["services/uptime/src/infrastructure.rs", "Rust, Reqwest, Tokio", "Безопасный HTTP-клиент: лимит полезной нагрузки 512 КБайт, защита от DNS Rebinding (resolve_to_addrs), фильтр SSRF", "Сетевой клиент и защита"],
+        ["services/docs/", "Fastify, TypeScript, Swagger", "Единый интерактивный портал документации API: агрегация OpenAPI-спецификаций BFF, Uptime и Identify в мульти-селекторе", "Портал OpenAPI/Swagger"],
+        ["services/uptime/migrations/", "SQL, SQLx CLI", "Идемпотентные миграции БД: таблицы sites, widgets, forbidden_ip и гипертаблица site_pings", "Схема TimescaleDB"],
+        ["docker-compose.yml", "Docker Compose", "Контейнеризация сервисов хранения данных: TimescaleDB (PostgreSQL 16) и Redis для фонового контура", "Инфраструктура хранилищ"]
     ]
     return build_odt_table("Table5", headers, rows, col_widths=col_widths, center_cols=center_cols)
 

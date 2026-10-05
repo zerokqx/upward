@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "reactuse": {
+      "source": "siberiacancode/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/reactuse/SKILL.md",
+      "computedHash": "5bd80dbb03674c74fe8b3cc207b910d9bcc737cb382ad9fb8c92b2ea8247a789"
+    }
+  }
+}

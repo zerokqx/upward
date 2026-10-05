@@ -1,30 +1,6 @@
 {
   "openapi": "3.0.0",
-  "servers": [
-    {
-      "url": "http://localhost:4000",
-      "description": "BFF Gateway (Local)"
-    },
-    {
-      "url": "/",
-      "description": "Current Origin"
-    }
-  ],
   "paths": {
-    "/": {
-      "get": {
-        "operationId": "AppController_getHello",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "App"
-        ]
-      }
-    },
     "/auth/register": {
       "post": {
         "operationId": "AuthController_register",
@@ -72,7 +48,14 @@
         },
         "responses": {
           "200": {
-            "description": "Успешная аутентификация, возвращены Access и Refresh токены"
+            "description": "Успешная аутентификация, возвращен Access токен в теле и Refresh токен в HttpOnly cookie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
           },
           "400": {
             "description": "Невалидные учетные данные"
@@ -106,13 +89,35 @@
         },
         "responses": {
           "200": {
-            "description": "Токены успешно обновлены"
+            "description": "Access токен успешно обновлен, новый Refresh токен сохранен в HttpOnly cookie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
           },
           "401": {
             "description": "Невалидный или протухший Refresh токен"
           }
         },
-        "summary": "Обновление пары токенов по Refresh токену (Token Rotation)",
+        "summary": "Обновление пары токенов (Token Rotation)",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Успешный выход"
+          }
+        },
+        "summary": "Выход из системы (очистка HttpOnly cookie)",
         "tags": [
           "Auth"
         ]
@@ -187,7 +192,14 @@
         },
         "responses": {
           "201": {
-            "description": "Сайт успешно зарегистрирован"
+            "description": "Сайт успешно зарегистрирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSiteResponseDto"
+                }
+              }
+            }
           },
           "400": {
             "description": "Невалидный URL или ошибка DNS-резолвинга"
@@ -214,7 +226,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Список сайтов пользователя"
+            "description": "Список сайтов пользователя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteResponseDto"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Пользователь не авторизован"
@@ -246,7 +268,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Владение сайтом успешно подтверждено"
+            "description": "Владение сайтом успешно подтверждено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifySiteResponseDto"
+                }
+              }
+            }
           },
           "400": {
             "description": "Токен не совпадает или некорректный ответ сайта"
@@ -287,7 +316,17 @@
         ],
         "responses": {
           "200": {
-            "description": "История замеров доступности за последние 30 дней"
+            "description": "История замеров доступности за последние 30 дней",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PingRecordDto"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Пользователь не авторизован"
@@ -310,12 +349,21 @@
   },
   "info": {
     "title": "Upward BFF API",
-    "description": "Backend-For-Frontend API для веб- и мобильных клиентов Upward",
+    "description": "Backend-For-Frontend API для веб- и мобильных клиентов Upward: единая точка входа для авторизации и мониторинга сайтов",
     "version": "0.1.0",
     "contact": {}
   },
   "tags": [],
-  "servers": [],
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "BFF Gateway (Local)"
+    },
+    {
+      "url": "/",
+      "description": "Current Origin"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "bearer": {
@@ -369,19 +417,28 @@
           "password"
         ]
       },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "access": {
+            "type": "string",
+            "description": "JWT токен доступа (Bearer)"
+          }
+        },
+        "required": [
+          "access"
+        ]
+      },
       "RefreshDto": {
         "type": "object",
         "properties": {
           "refresh": {
+            "description": "Refresh токен сессии (UUID v4, опционально, если передан в HttpOnly cookie)",
             "type": "string",
             "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-            "description": "Refresh токен сессии (UUID v4)"
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
-        },
-        "required": [
-          "refresh"
-        ]
+        }
       },
       "CreateSiteDto": {
         "type": "object",
@@ -395,6 +452,126 @@
         },
         "required": [
           "site"
+        ]
+      },
+      "CreateSiteResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор созданного сайта"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус операции"
+          },
+          "challenge_path": {
+            "type": "string",
+            "description": "Путь, по которому должен быть доступен токен"
+          },
+          "challenge_token": {
+            "type": "string",
+            "description": "Секретный токен для подтверждения владения сайтом"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "challenge_path",
+          "challenge_token"
+        ]
+      },
+      "SiteResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор сайта"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "Идентификатор пользователя-владельца"
+          },
+          "url": {
+            "type": "string",
+            "description": "Отслеживаемый URL"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Признак подтверждения и активности сайта"
+          },
+          "status": {
+            "type": "string",
+            "description": "Текущий статус сайта в очереди"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Время добавления сайта (UTC)"
+          },
+          "status_updated_at": {
+            "type": "string",
+            "description": "Время обновления статуса (UTC)"
+          },
+          "last_check": {
+            "description": "Время последней проверки (UTC)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extra": {
+            "description": "Дополнительные данные последней проверки",
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "url",
+          "active",
+          "status",
+          "created_at",
+          "status_updated_at"
+        ]
+      },
+      "VerifySiteResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор подтвержденного сайта"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус операции"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "PingRecordDto": {
+        "type": "object",
+        "properties": {
+          "site_id": {
+            "type": "string",
+            "description": "Идентификатор сайта"
+          },
+          "duration_ms": {
+            "type": "number",
+            "description": "Длительность ответа в миллисекундах"
+          },
+          "extra": {
+            "description": "Дополнительные метаданные замера",
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "site_id",
+          "duration_ms"
         ]
       }
     }

@@ -4,10 +4,16 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { queryClient } from "./tanstack-query";
 import type { QueryClient } from "@tanstack/react-query";
 
+import { authEvents } from "@/shared/api";
+
 export interface RouterContext {
   readonly queryClient: QueryClient;
 }
 const router = createRouter({ routeTree, context: { queryClient } });
+
+authEvents.on("session:expired", () => {
+  router.invalidate();
+});
 
 declare module "@tanstack/react-router" {
   interface Register {

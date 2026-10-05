@@ -33,7 +33,7 @@ export class AuthService {
     }
   }
 
-  async refresh(dto: RefreshDto): Promise<LoginByPasswordResponseDto> {
+  async refresh(dto: { refresh: string }): Promise<LoginByPasswordResponseDto> {
     try {
       return await this.identifyAuth.refresh({
         refresh: dto.refresh,

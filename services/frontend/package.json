@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "codegen": "orval",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@nanostores/react": "^2.0.1",
+    "@siberiacancode/reactuse": "^1.0.17",
     "@tanstack/react-devtools": "^0.10.13",
     "@tanstack/react-hotkeys": "^0.12.1",
     "@tanstack/react-hotkeys-devtools": "^0.9.1",
@@ -18,12 +21,18 @@
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-router": "^1.170.41",
     "@tanstack/react-router-devtools": "^1.167.2",
+    "axios": "^1.20.0",
+    "jwt-decode": "^4.0.0",
+    "nanoevents": "^10.0.0",
+    "nanostores": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-hook-form": "^7.89.0"
+    "react-hook-form": "^7.89.0",
+    "tslog": "^5.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@nanostores/logger": "^1.1.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tanstack/router-plugin": "^1.168.42",
     "@types/babel__core": "^7.20.5",
@@ -32,6 +41,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
+    "orval": "^8.38.0",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"

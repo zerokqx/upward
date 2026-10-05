@@ -147,6 +147,12 @@ importers:
 
   services/frontend:
     dependencies:
+      '@nanostores/react':
+        specifier: ^2.0.1
+        version: 2.0.1(nanostores@1.5.4)(react@19.3.0)
+      '@siberiacancode/reactuse':
+        specifier: ^1.0.17
+        version: 1.0.17(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/react-devtools':
         specifier: ^0.10.13
         version: 0.10.13(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(csstype@3.2.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.15)
@@ -171,6 +177,18 @@ importers:
       '@tanstack/react-router-devtools':
         specifier: ^1.167.2
         version: 1.167.2(@tanstack/react-router@1.170.41(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.34)(csstype@3.2.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      axios:
+        specifier: ^1.20.0
+        version: 1.20.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+      jwt-decode:
+        specifier: ^4.0.0
+        version: 4.0.0
+      nanoevents:
+        specifier: ^10.0.0
+        version: 10.0.0
+      nanostores:
+        specifier: ^1.5.4
+        version: 1.5.4
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -180,10 +198,16 @@ importers:
       react-hook-form:
         specifier: ^7.89.0
         version: 7.89.0(@types/react@19.3.0)(react@19.3.0)
+      tslog:
+        specifier: ^5.2.0
+        version: 5.2.0
     devDependencies:
       '@babel/core':
         specifier: ^7.29.7
         version: 7.29.7(supports-color@7.2.0)
+      '@nanostores/logger':
+        specifier: ^1.1.0
+        version: 1.1.0(nanostores@1.5.4)
       '@rolldown/plugin-babel':
         specifier: ^0.2.3
         version: 0.2.4(@babel/core@7.29.7(supports-color@7.2.0))(@babel/runtime@7.29.7)(rolldown@1.2.12)(vite@8.3.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -208,6 +232,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      orval:
+        specifier: ^8.38.0
+        version: 8.38.0(@faker-js/faker@10.6.0)(@tanstack/react-query@5.104.0(react@19.3.0))(prettier@3.9.6)(typescript@6.0.3)(zod@4.6.5)
       oxlint:
         specifier: ^1.81.0
         version: 1.81.0
@@ -690,6 +717,19 @@ packages:
 
   '@microsoft/tsdoc@0.17.0':
     resolution: {integrity: sha512-p68VexhnH7ojf3U27RdryUDqnKJgKaWUbCL96vJR7N0mqDuhKG5OIECk3sCPPdynxjk+yoVhRkScqtv5KQjzsw==}
+
+  '@nanostores/logger@1.1.0':
+    resolution: {integrity: sha512-p+wBEP5SNQFreL3DWwbITOC8mNUZxDNN3rz/7gDQeyrfuL3pqXOilRnr9wtYbt+FFVQ6U72fB3DtOOzFmLmB7w==}
+    engines: {node: ^20.0.0 || >=22.0.0}
+    peerDependencies:
+      nanostores: ^0.10.0 || ^0.11.0 || ^1.0.0
+
+  '@nanostores/react@2.0.1':
+    resolution: {integrity: sha512-txbZTd+7/hnO7FhtF8Pmr+cu0ThdCuCnOyEEh0DsEM2Hp9PfOa5EY4uj3wpZpypSzp5BuqDgf2AxVAKoUIWOFQ==}
+    engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
+    peerDependencies:
+      nanostores: ^1.2.0
+      react: '>=18.0.0'
 
   '@neodrag/core@3.0.0-next.11':
     resolution: {integrity: sha512-3WQWxyrbxiaK9zS5JU2wJsW2gpoQlZBXVghduBh61JpqaeE0T0cte8R0qYK2RuJo3J2TYQYqxO19CpG/C1i5eg==}
@@ -1230,6 +1270,17 @@ packages:
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
+
+  '@siberiacancode/reactuse@1.0.17':
+    resolution: {integrity: sha512-/fxWWYfiqK2h6dAK9IXLEMWNQXJ3TIV54mZ7vG+YkD3gmr0ZB6nFs0MJuM97SPZnxZdwD51JHjVdBq5M8GB2EQ==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      '@types/react': ^18 || ^19
+      react: ^18 || ^19
+      react-dom: ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
@@ -2409,6 +2460,10 @@ packages:
   jws@4.0.1:
     resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
 
+  jwt-decode@4.0.0:
+    resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
+    engines: {node: '>=18'}
+
   libphonenumber-js@1.13.14:
     resolution: {integrity: sha512-llihgCcx0BFLksecLP+x1J+6JDE1GsXS1RN/LoPF6qcwpeQcnjj0lcvZxY8AzbEpYwyZWPZW/nDuqkqzm3amiw==}
 
@@ -2630,6 +2685,10 @@ packages:
     resolution: {integrity: sha512-dkEJPVvun4FryqBmZ5KhDo0K9iDXAwn08tMLDinNdRBNPcYEDiWYysLcc6k3mjTMlbP9KyylvRpd4wFtwrT9rw==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
+  nanoevents@10.0.0:
+    resolution: {integrity: sha512-PmIJ3BNxOzgVgnS1r/Pvyj6eZx/xUV2JCPogh0brD6smDIwjRlr1KBl9yoRX323PlfaNrBDDnfCgC9SL00OjSg==}
+    engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
+
   nanoid@3.3.18:
     resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -2639,6 +2698,10 @@ packages:
     resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
+
+  nanostores@1.5.4:
+    resolution: {integrity: sha512-4UXY7OAJEK0Y6V3SudBU7cXjAzTDc189R78dDOh0Xbm19gpKYto6WizSg58LJf12lTsRxKSLGyE117OiLpM4DQ==}
+    engines: {node: ^20.0.0 || >=22.0.0}
 
   negotiator@1.1.0:
     resolution: {integrity: sha512-NMPBRMJgiQHjbd8phG3Vebdx4kZ1H121rbl5IkMqeOsahptB9BKo/d7oJ3zTXqTgagn2bWlNSXkh0QUGM31RYg==}
@@ -3202,6 +3265,11 @@ packages:
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  tslog@5.2.0:
+    resolution: {integrity: sha512-bD0FpBIFZ1OInp7uzQmEn1SJe6feTkVTCudw/27ILuISbVZtTryXqauxyCWTa1I8ZgTm9OGQ6YrJPKM+6QTeJA==}
+    engines: {node: '>=22'}
+    hasBin: true
 
   tsx@4.23.15:
     resolution: {integrity: sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw==}
@@ -3926,6 +3994,15 @@ snapshots:
 
   '@microsoft/tsdoc@0.17.0': {}
 
+  '@nanostores/logger@1.1.0(nanostores@1.5.4)':
+    dependencies:
+      nanostores: 1.5.4
+
+  '@nanostores/react@2.0.1(nanostores@1.5.4)(react@19.3.0)':
+    dependencies:
+      nanostores: 1.5.4
+      react: 19.3.0
+
   '@neodrag/core@3.0.0-next.11': {}
 
   '@neodrag/solid@3.0.0-next.11(@neodrag/core@3.0.0-next.11)(solid-js@1.9.15)':
@@ -4341,6 +4418,13 @@ snapshots:
   '@scarf/scarf@1.4.0': {}
 
   '@sec-ant/readable-stream@0.4.1': {}
+
+  '@siberiacancode/reactuse@1.0.17(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+    optionalDependencies:
+      '@types/react': 19.3.0
 
   '@sindresorhus/is@4.6.0': {}
 
@@ -5647,6 +5731,8 @@ snapshots:
       jwa: 2.0.1
       safe-buffer: 5.2.1
 
+  jwt-decode@4.0.0: {}
+
   libphonenumber-js@1.13.14:
     optional: true
 
@@ -5817,9 +5903,13 @@ snapshots:
 
   mute-stream@3.0.0: {}
 
+  nanoevents@10.0.0: {}
+
   nanoid@3.3.18: {}
 
   nanoid@5.1.16: {}
+
+  nanostores@1.5.4: {}
 
   negotiator@1.1.0:
     dependencies:
@@ -6416,6 +6506,8 @@ snapshots:
       strip-bom: 3.0.0
 
   tslib@2.8.1: {}
+
+  tslog@5.2.0: {}
 
   tsx@4.23.15:
     dependencies:

@@ -28,8 +28,8 @@ async function bootstrap() {
     .addServer('/', 'Current Origin')
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  cleanupOpenApiDoc(document);
+  const rawDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = cleanupOpenApiDoc(rawDocument, { version: '3.0' });
   SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT ?? 4000;

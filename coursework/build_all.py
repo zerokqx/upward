@@ -56,6 +56,7 @@ def render_diagrams():
     print("\n--- 1. Генерация и рендеринг диаграмм ---")
     run_cmd([sys.executable, os.path.join(BASE_DIR, "generate_db_schema.py")])
     run_cmd([sys.executable, os.path.join(BASE_DIR, "render_ramus_svg_png.py")])
+    run_cmd([sys.executable, os.path.join(BASE_DIR, "render_project_structure.py")])
     print("Диаграммы успешно сгенерированы.")
 
 
